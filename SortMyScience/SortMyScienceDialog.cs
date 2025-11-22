@@ -55,11 +55,9 @@ namespace SortMyScience
 
 			if (SortMyScience.Instance != null)
 			{
-				if (buttonNext != null)
-					buttonNext.onClick.AddListener(SortMyScience.Instance.onPageChange);
+				buttonNext?.onClick.AddListener(SortMyScience.Instance.OnPageChange);
 
-				if (buttonPrev != null)
-					buttonPrev.onClick.AddListener(SortMyScience.Instance.onPageChange);
+				buttonPrev?.onClick.AddListener(SortMyScience.Instance.OnPageChange);
 			}
 
 			onDialogSpawn.Fire(dialog, this);

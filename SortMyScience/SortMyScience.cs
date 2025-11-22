@@ -26,7 +26,6 @@ THE SOFTWARE.
 #endregion
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Linq;
@@ -79,20 +78,23 @@ namespace SortMyScience
 				CommNetConstellationCheck();
 
 			if (!spritesLoaded)
-				loadSprite();
+				LoadSprite();
 
 			instance = this;
 			
-			processPrefab();
+			ProcessPrefab();
         }
 
-		private void Start()
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0019:Use pattern matching", Justification = "Using Pattern Matching breaks following switch statement")]
+        private void Start()
 		{
             //SMSLog("Entering Start()");
+			SortMyScienceDialog.onDialogSpawn.Add(OnSpawn);
+            SortMyScienceDialog.onDialogClose.Add(OnClose);
 			//GameEvents.OnTriggeredDataTransmission.Add(onTriggeredData);
 			//GameEvents.onGamePause.Add(onPause);
 			//GameEvents.onGameUnpause.Add(onUnpause);
-			GameEvents.OnGameSettingsApplied.Add(onSettingsApplied);
+			GameEvents.OnGameSettingsApplied.Add(OnSettingsApplied);
 
 			settings = HighLogic.CurrentGame.Parameters.CustomParams<SortMyScienceParameters>();
 
@@ -115,20 +117,24 @@ namespace SortMyScience
 		{
             //SMSLog("Entering OnDestroy()");
             instance = null;
+            SortMyScienceDialog.onDialogSpawn.Remove(OnSpawn);
+            SortMyScienceDialog.onDialogClose.Remove(OnClose);
 			//GameEvents.OnTriggeredDataTransmission.Remove(onTriggeredData);
-			GameEvents.OnGameSettingsApplied.Remove(onSettingsApplied);
+			//GameEvents.onGamePause.Remove(onPause);
+			//GameEvents.onGameUnpause.Remove(onUnpause);
+			GameEvents.OnGameSettingsApplied.Remove(OnSettingsApplied);
         }
 
-		private void onSettingsApplied()
+        private void OnSettingsApplied()
 		{
 			settings = HighLogic.CurrentGame.Parameters.CustomParams<SortMyScienceParameters>();
 		}
 
-		private void loadSprite()
+        private void LoadSprite()
 		{
-			Texture2D normal = GameDatabase.Instance.GetTexture("SortMyScience/Resources/Relay_Normal", false);
-			Texture2D highlight = GameDatabase.Instance.GetTexture("SortMyScience/Resources/Relay_Highlight", false);
-			Texture2D active = GameDatabase.Instance.GetTexture("SortMyScience/Resources/Relay_Active", false);
+			Texture2D normal = GameDatabase.Instance.GetTexture("SortMyScience/Resources/SortMyScience_Normal", false);
+			Texture2D highlight = GameDatabase.Instance.GetTexture("SortMyScience/Resources/SortMyScience_Highlight", false);
+			Texture2D active = GameDatabase.Instance.GetTexture("SortMyScience/Resources/SortMyScience_Active", false);
 
 			if (normal == null || highlight == null || active == null)
 				return;
@@ -140,7 +146,7 @@ namespace SortMyScience
 			spritesLoaded = true;
 		}
 
-		private void processPrefab()
+        private void ProcessPrefab()
 		{
 			SMSLog("Entering processPrefab()");
 			GameObject prefab = AssetBase.GetPrefab("ScienceResultsDialog");
@@ -155,12 +161,14 @@ namespace SortMyScience
 			for (int i = buttons.Length - 1; i >= 0; i--)
 			{
 				Button b = buttons[i];
+                //RelayLog("Dialog Button: {0}", b.name);
 				if (b.name == "ButtonPrev")
 					dialogListener.buttonPrev = b;
 				else if (b.name == "ButtonNext")
 					dialogListener.buttonNext = b;
 				else if (b.name == "ButtonKeep")
 				{
+                    //RelayLog("Cloning Keep Button...");
                     dialogListener.buttonTransfer = Instantiate(b) as Button;
 
                     dialogListener.buttonTransfer.name = "ButtonTransfer";
@@ -174,6 +182,7 @@ namespace SortMyScience
 
 					if (spritesLoaded)
                     {
+                        //RelayLog("Assigning Sprites To Transfer Button...");
                         Selectable select = dialogListener.buttonTransfer.GetComponent<Selectable>();
 
 						if (select != null)
@@ -196,7 +205,7 @@ namespace SortMyScience
 			SMSLog("Science results prefab processed...");
 		}
 
-		private void onSpawn(ExperimentsResultDialog dialog, SortMyScienceDialog relayDialog)
+		private void OnSpawn(ExperimentsResultDialog dialog, SortMyScienceDialog sortMyScienceDialog)
 		{
 			SMSLog("Entering onSpawn()");
 			if (dialog == null)
@@ -222,9 +231,9 @@ namespace SortMyScience
                 if (b.name == "ButtonKeep")
                 {
                     //SortMyScienceLog("1-3-{0}", i);
-                    transferButton = Instantiate(relayDialog.buttonTransfer, b.transform.parent) as Button;
+                    transferButton = Instantiate(sortMyScienceDialog.buttonTransfer, b.transform.parent) as Button;
 
-                    transferButton.onClick.AddListener(onTransfer);
+                    transferButton.onClick.AddListener(OnTransfer);
 
                     break;
                 }
@@ -234,11 +243,9 @@ namespace SortMyScience
 
             if (currentPage.pageData != null)
 				currentPage.pageData.baseTransmitValue = currentPage.xmitDataScalar;
-
-            //transferButton.gameObject.SetActive(true);
         }
 
-        private void onClose(ExperimentsResultDialog dialog)
+        private void OnClose(ExperimentsResultDialog dialog, SortMyScienceDialog sortMyScienceDialog)
 		{
             SMSLog("Entering onClose()");
             if (dialog == null || resultsDialog == null)
@@ -250,11 +257,9 @@ namespace SortMyScience
 				transferButton = null;
 				currentPage = null;
 			}
-
-			//popupDismiss();
         }
 
-		public void onPageChange()
+		public void OnPageChange()
 		{
             SMSLog("Entering onPageChange()");
 			if (resultsDialog == null)
@@ -264,11 +269,9 @@ namespace SortMyScience
 
 			if (currentPage.pageData != null)
 				currentPage.pageData.baseTransmitValue = currentPage.xmitDataScalar;
-
-			//popupDismiss();
 		}
 
-		public void onTransfer()
+		public void OnTransfer()
 		{
             SMSLog("Entering onTransfer()");
             if (resultsDialog == null)
@@ -282,7 +285,7 @@ namespace SortMyScience
 
             var vessel = FlightGlobals.ActiveVessel;
 
-			List<ScienceData> dataQueue = new List<ScienceData>();
+			int transmitted = 0, labbed = 0, discarded = 0, kept = 0;
 
             for (int i = resultsDialog.pages.Count - 1; i >= 0; i--)
 			{
@@ -310,6 +313,7 @@ namespace SortMyScience
                         page.pageData
                     };
 					bestTransmitter.TransmitData(data);
+					transmitted++;
 				}
 				//Lab everything below threshold if a lab is available
 				else if (page.labSearch.NextLabForDataFound && page.pageData.labValue > 0 && page.scienceValue <= settings.labThreshold)
@@ -318,6 +322,7 @@ namespace SortMyScience
 					SMSLog("Lab Process: ", page.pageData);
 					ModuleScienceContainer container = lab.part.FindModuleImplementing<ModuleScienceContainer>();
 					StartCoroutine(lab.ProcessData(page.pageData));
+					labbed++;
 				}
 				//Discard everything with no value
 				else if (page.pageData.labValue == 0f && page.scienceValue == 0f)
@@ -332,15 +337,19 @@ namespace SortMyScience
                         SMSLog("Discard:", page.pageData);
                         ModuleScienceContainer c = p.FindModuleImplementing<ModuleScienceContainer>();
 						c.DumpData(page.pageData);
+						discarded++;
 					}
                 }
 				//Keep the rest (Returnables, Transmittables w/o Connection, and Lab-worthy data without an available lab)
 				else
 				{
 					SMSLog("Keep:", page.pageData);
+					kept++;
 				}
             }
 			resultsDialog.Dismiss();
+			string msg = Localizer.Format("#autoLOC_SortMyScience_CompleteMsg", transmitted, labbed, discarded, kept);
+			ScreenMessages.PostScreenMessage(msg, duration: 7.5f);
         }
 
         public Part GetContainerPart(ScienceData science)
@@ -362,7 +371,7 @@ namespace SortMyScience
             return null;
         }
 
-  //      private void onTriggeredData(ScienceData data, Vessel vessel, bool aborted)
+		//private void onTriggeredData(ScienceData data, Vessel vessel, bool aborted)
 		//{
 		//	SMSLog("Entering onTriggeredData()");
 		//	StartCoroutine(WaitForTrigger(data, vessel, aborted));
@@ -396,7 +405,7 @@ namespace SortMyScience
 		//	}
 		//}
 
-		private bool isVesselConnected()
+		private bool IsVesselConnected()
 		{
             SMSLog("Entering isVesselConnected()");
             Vessel vessel = FlightGlobals.ActiveVessel;
