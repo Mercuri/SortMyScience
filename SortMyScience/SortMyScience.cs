@@ -304,45 +304,42 @@ namespace SortMyScience
 				//Transmit everything above threshold
 				if (page.xmitDataScalar >= settings.transmissionThreshold && page.scienceValue > 0 && bestTransmitter != null)  //xmitDataScalar is what percentage of the total data is transmitted
 				{
-					SMSLog("Transmitting Science:", page.pageData);
-					List<ScienceData> data = new List<ScienceData>();
-					data.Add(page.pageData);
+					SMSLog("Transmit:", page.pageData);
+					List<ScienceData> data = new List<ScienceData>
+                    {
+                        page.pageData
+                    };
 					bestTransmitter.TransmitData(data);
 				}
 				//Lab everything below threshold if a lab is available
 				else if (page.labSearch.NextLabForDataFound && page.pageData.labValue > 0 && page.scienceValue <= settings.labThreshold)
 				{
 					ModuleScienceLab lab = page.labSearch.NextLabForData;
-					SMSLog($"Attempting data pull for lab {lab.name} on-board {vessel.vesselName}...", page.pageData);
+					SMSLog("Lab Process: ", page.pageData);
 					ModuleScienceContainer container = lab.part.FindModuleImplementing<ModuleScienceContainer>();
 					StartCoroutine(lab.ProcessData(page.pageData));
 				}
 				//Discard everything with no value
 				else if (page.pageData.labValue == 0f && page.scienceValue == 0f)
 				{
-					SMSLog("Discarding Data:", page.pageData);
-					//IScienceDataContainer host = page.host.FindModuleImplementing<IScienceDataContainer>();
-					//host.DumpData(page.pageData);
 					Part p = GetContainerPart(page.pageData);
                     if (p == null)
                     {
-						SMSLog("Could not find container. ", page.pageData);
+						SMSLog("Could not find container for Discard. ", page.pageData);
                     }
 					else
 					{
-						ModuleScienceContainer c = p.FindModuleImplementing<ModuleScienceContainer>();
+                        SMSLog("Discard:", page.pageData);
+                        ModuleScienceContainer c = p.FindModuleImplementing<ModuleScienceContainer>();
 						c.DumpData(page.pageData);
 					}
                 }
-				//Keep the rest (Returnables and Lab-worthy data without an available lab)
+				//Keep the rest (Returnables, Transmittables w/o Connection, and Lab-worthy data without an available lab)
 				else
 				{
-					SMSLog("Keeping Data:", page.pageData);
+					SMSLog("Keep:", page.pageData);
 				}
-				//Removing the Page from the Dialog
-				//SMSLog("Removing Page from the Dialog: " + resultsDialog.pages.Remove(page));
             }
-			//resultsDialog.Update();
 			resultsDialog.Dismiss();
         }
 
