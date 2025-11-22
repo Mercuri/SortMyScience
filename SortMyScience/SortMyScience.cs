@@ -89,7 +89,7 @@ namespace SortMyScience
 		private void Start()
 		{
             //SMSLog("Entering Start()");
-			GameEvents.OnTriggeredDataTransmission.Add(onTriggeredData);
+			//GameEvents.OnTriggeredDataTransmission.Add(onTriggeredData);
 			//GameEvents.onGamePause.Add(onPause);
 			//GameEvents.onGameUnpause.Add(onUnpause);
 			GameEvents.OnGameSettingsApplied.Add(onSettingsApplied);
@@ -103,7 +103,7 @@ namespace SortMyScience
 			}
 
 			Assembly assembly = AssemblyLoader.loadedAssemblies.GetByAssembly(Assembly.GetExecutingAssembly()).assembly;
-			var ainfoV = Attribute.GetCustomAttribute(assembly, typeof(AssemblyInformationalVersionAttribute)) as AssemblyInformationalVersionAttribute;
+            var ainfoV = Attribute.GetCustomAttribute(assembly, typeof(AssemblyInformationalVersionAttribute)) as AssemblyInformationalVersionAttribute;
 			switch (ainfoV == null)
 			{
 				case true: version = ""; break;
@@ -115,7 +115,7 @@ namespace SortMyScience
 		{
             //SMSLog("Entering OnDestroy()");
             instance = null;
-			GameEvents.OnTriggeredDataTransmission.Remove(onTriggeredData);
+			//GameEvents.OnTriggeredDataTransmission.Remove(onTriggeredData);
 			GameEvents.OnGameSettingsApplied.Remove(onSettingsApplied);
         }
 
@@ -365,39 +365,39 @@ namespace SortMyScience
             return null;
         }
 
-        private void onTriggeredData(ScienceData data, Vessel vessel, bool aborted)
-		{
-			SMSLog("Entering onTriggeredData()");
-			StartCoroutine(WaitForTrigger(data, vessel, aborted));
-		}
+  //      private void onTriggeredData(ScienceData data, Vessel vessel, bool aborted)
+		//{
+		//	SMSLog("Entering onTriggeredData()");
+		//	StartCoroutine(WaitForTrigger(data, vessel, aborted));
+		//}
 
-		private IEnumerator WaitForTrigger(ScienceData data, Vessel vessel, bool aborted)
-		{
-			SMSLog("Entering WaitForTrigger()");
+		//private IEnumerator WaitForTrigger(ScienceData data, Vessel vessel, bool aborted)
+		//{
+		//	SMSLog("Entering WaitForTrigger()");
 
-			yield return new WaitForEndOfFrame();
+		//	yield return new WaitForEndOfFrame();
 
-			if (vessel == null)
-				yield break;
+		//	if (vessel == null)
+		//		yield break;
 
-			if (vessel != FlightGlobals.ActiveVessel)
-				yield break;
+		//	if (vessel != FlightGlobals.ActiveVessel)
+		//		yield break;
 
-			if (data == null)
-				yield break;
+		//	if (data == null)
+		//		yield break;
 
-			for (int i = queuedData.Count - 1; i >= 0; i--)
-			{
-				SortMyScienceData d = queuedData[i];
+		//	for (int i = queuedData.Count - 1; i >= 0; i--)
+		//	{
+		//		SortMyScienceData d = queuedData[i];
 
-				if (d._data.subjectID != data.subjectID)
-					continue;
+		//		if (d._data.subjectID != data.subjectID)
+		//			continue;
 
-				queuedData.Remove(d);
+		//		queuedData.Remove(d);
 
-				break;
-			}
-		}
+		//		break;
+		//	}
+		//}
 
 		private bool isVesselConnected()
 		{
