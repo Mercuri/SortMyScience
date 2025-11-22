@@ -51,8 +51,6 @@ namespace SortMyScience
 		private Button transferButton;
 		private ExperimentsResultDialog resultsDialog;
 		private ExperimentResultDialogPage currentPage;
-		private static bool CNConstellationChecked;
-		private static bool CNConstellationLoaded;
 
 		public static SortMyScience Instance
 		{
@@ -73,9 +71,6 @@ namespace SortMyScience
 				Destroy(gameObject);
 				return;
 			}
-
-			if (!CNConstellationChecked)
-				CommNetConstellationCheck();
 
 			if (!spritesLoaded)
 				LoadSprite();
@@ -370,67 +365,6 @@ namespace SortMyScience
             // If not found (e.g., vessel unloaded, data corrupted, or in editor scene)
             return null;
         }
-
-		//private void onTriggeredData(ScienceData data, Vessel vessel, bool aborted)
-		//{
-		//	SMSLog("Entering onTriggeredData()");
-		//	StartCoroutine(WaitForTrigger(data, vessel, aborted));
-		//}
-
-		//private IEnumerator WaitForTrigger(ScienceData data, Vessel vessel, bool aborted)
-		//{
-		//	SMSLog("Entering WaitForTrigger()");
-
-		//	yield return new WaitForEndOfFrame();
-
-		//	if (vessel == null)
-		//		yield break;
-
-		//	if (vessel != FlightGlobals.ActiveVessel)
-		//		yield break;
-
-		//	if (data == null)
-		//		yield break;
-
-		//	for (int i = queuedData.Count - 1; i >= 0; i--)
-		//	{
-		//		SortMyScienceData d = queuedData[i];
-
-		//		if (d._data.subjectID != data.subjectID)
-		//			continue;
-
-		//		queuedData.Remove(d);
-
-		//		break;
-		//	}
-		//}
-
-		private bool IsVesselConnected()
-		{
-            SMSLog("Entering isVesselConnected()");
-            Vessel vessel = FlightGlobals.ActiveVessel;
-			if (vessel == null)
-				return false;
-
-			//if (!CommNetScenario.CommNetEnabled)
-			//	return true;    //If Comms aren't enabled we are always connected
-
-			return vessel.Connection.IsConnected;
-        }
-
-		
-		private void CommNetConstellationCheck()
-		{
-            SMSLog("Entering CommNetConstellationCheck()");
-            var assembly = AssemblyLoader.loadedAssemblies.FirstOrDefault(a => a.assembly.GetName().Name.StartsWith("CommNetConstellation"));
-
-			CNConstellationLoaded = assembly != null;
-
-			//if (CNConstellationLoaded)
-			//	SortMyScienceLog("CommNet Constellation addon detected; Science Relay disabling CommNet connection status integration");
-
-			CNConstellationChecked = true;
-		}
 		
 		public static void SMSLog(string s, params object[] o)
 		{
