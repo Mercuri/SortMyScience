@@ -1,16 +1,16 @@
 {
      "NAME":"SortMyScience",
-	 "URL":"",
-	 "DOWNLOAD":"",
+	 "URL":"https://github.com/Mercuri/SortMyScience",
+	 "DOWNLOAD":"https://github.com/Mercuri/SortMyScience/releases",
      "GITHUB":{
-         "USERNAME":"ZeroMercuri",
+         "USERNAME":"Mercuri",
          "REPOSITORY":"SortMyScience",
          "ALLOW_PRE_RELEASE":false
      },
      "VERSION":{
-         "MAJOR":0,
-         "MINOR":1,
-         "PATCH":0,
+         "MAJOR":1,
+         "MINOR":0,
+         "PATCH":1,
          "BUILD":0
      },
      "KSP_VERSION":{
