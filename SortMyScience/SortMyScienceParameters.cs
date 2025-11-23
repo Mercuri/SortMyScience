@@ -3,7 +3,7 @@
 
 SortMyScienceParameters - In game settings for Science Transfer
 
-Copyright (c) 2025 ZeroMercuri
+Copyright (c) 2025 Mercuri
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

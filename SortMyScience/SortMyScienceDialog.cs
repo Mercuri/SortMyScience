@@ -3,7 +3,7 @@
 
 SortMyScienceDialog - A small script attached to the Experiment Results Dialog prefab taken from DMagic's ScienceRelay Mod
 
-Copyright (c) 2025 ZeroMercuri
+Copyright (c) 2025 Mercuri
 Copyright (c) 2016 DMagic
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
