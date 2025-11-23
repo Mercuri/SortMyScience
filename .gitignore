@@ -13,6 +13,12 @@
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
+# User-designated files
+*.ckan
+SortMyScience.png
+SortMyScience-Banner.png
+SortMyScience-1280x640.png
+
 # Mono auto generated files
 mono_crash.*
 
