@@ -31,27 +31,18 @@ namespace SortMyScience
 {
 	public class SortMyScienceParameters : GameParameters.CustomParameterNode
 	{
-        public override string Title => "#autoLOC_SortMyScience_Title"; // Section title in settings
+        public override string Title => string.Empty; // Section title in settings
         public override string DisplaySection => "#autoLOC_SortMyScience_Title"; // Name in the settings menu
         public override string Section => "#autoLOC_SortMyScience_Title"; // Internal category
         public override GameParameters.GameMode GameMode => GameParameters.GameMode.SCIENCE | GameParameters.GameMode.CAREER; // Available in game modes with science
         public override bool HasPresets => false; // No presets
-        public override int SectionOrder => 2; // Determines the position in the settings menu
-
-        [GameParameters.CustomFloatParameterUI("#autoLOC_SortMyScience_Settings_Tx", asPercentage = true, minValue = 0f, maxValue = 1f, stepCount = 101, toolTip = "#autoLOC_SortMyScience_Settings_Tx_ToolTip")]
-		public float transmissionThreshold = 1.0f;
-		[GameParameters.CustomFloatParameterUI("#autoLOC_SortMyScience_Settings_Lab", asPercentage = true, minValue = 0f, maxValue = 1f, stepCount = 101, toolTip = "#autoLOC_SortMyScience_Settings_LabTooltip")]
-		public float labThreshold = 0.0f;
+        public override int SectionOrder => 1; // Determines the position in the settings menu
+        [GameParameters.CustomFloatParameterUI("#autoLOC_SortMyScience_Settings_Tx", minValue = 0f, maxValue = 1f, stepCount = 101, displayFormat = "P0", toolTip = "#autoLOC_SortMyScience_Settings_Tx_ToolTip")]
+		public float transmissionThreshold = 1f;
+		[GameParameters.CustomFloatParameterUI("#autoLOC_SortMyScience_Settings_Lab", minValue = 0f, maxValue = 1f, stepCount = 101, displayFormat = "P0", toolTip = "#autoLOC_SortMyScience_Settings_LabTooltip")]
+		public float labThreshold = 0f;
 		[GameParameters.CustomParameterUI("#autoLOC_SortMyScience_Settings_Discard", toolTip = "#autoLOC_SortMyScience_Settings_DiscardTooltip")]
 		public bool discardDeadScience = true;
 
-        //public static SortMyScienceParameters Instance
-        //{
-        //    get
-        //    {
-        //        if (HighLogic.CurrentGame == null) return null; // Prevents crashes when game is loading
-        //        return HighLogic.CurrentGame.Parameters.CustomParams<SortMyScienceParameters>();
-        //    }
-        //}
     }
 }

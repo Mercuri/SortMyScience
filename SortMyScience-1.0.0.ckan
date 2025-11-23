@@ -1,0 +1,37 @@
+    {
+        "spec_version"   : 1,
+        "name"           : "Sort My Science",
+        "abstract"       : "Quickly sort through all experiments in a science container",
+        "identifier"     : "SortMyScience",
+		"author"         : "Mercuri",
+        "download"       : "https://github.com/Mercuri/SortMyScience/releases/download/1.0.0/SortMyScience.zip",
+        "license"        : "MIT",
+        "version"        : "1.0.0",
+        "release_status" : "stable",
+        "ksp_version"    : "1.12.5",
+        "resources" : {
+            "homepage"     : "https://github.com/Mercuri/SortMyScience",
+            "repository"   : "https://github.com/Mercuri/SortMyScience",
+			"bugtracker"   : "https://github.com/Mercuri/SortMyScience/issues"
+        },
+        "tags" : [
+            "plugin",
+            "science",
+            "convenience"
+        ],
+		"localizations": [
+        "en-us",
+        "es-es",
+        "fr-fr",
+		"de-de",
+		"ru-ru",
+		"ja",
+        "zh-cn"
+		],
+        "install" : [
+            {
+                "file"       : "SortMyScience",
+                "install_to" : "GameData"
+            }
+        ]
+    }
