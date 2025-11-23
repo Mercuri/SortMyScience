@@ -38,7 +38,7 @@ This mod hooks into the stock mechanisms used by the Experiment Results Dialog a
 
 ## ✍️ Author
 
-I'm Mercuri with thousands of hours in KSP.  As an avid consumer of KSP mods, I thought it was time I authored my own.  I'm a nub through so please forgive.
+I'm Mercuri with thousands of hours in KSP.  As an avid consumer of KSP mods, I thought it was time I authored my own.  I'm a nub though so please forgive.
 
 ## 🎉 Acknowledgements
 
