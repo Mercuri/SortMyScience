@@ -36,11 +36,11 @@ namespace SortMyScience
         public override string Section => "#autoLOC_SortMyScience_Title"; // Internal category
         public override GameParameters.GameMode GameMode => GameParameters.GameMode.SCIENCE | GameParameters.GameMode.CAREER; // Available in game modes with science
         public override bool HasPresets => false; // No presets
-        public override int SectionOrder => 1; // Determines the position in the settings menu
+        public override int SectionOrder => 2; // Determines the position in the settings menu
 
-        [GameParameters.CustomFloatParameterUI("#autoLOC_SortMyScience_Settings_Tx", asPercentage = true, stepCount = 5, toolTip = "#autoLOC_SortMyScience_Settings_Tx_ToolTip")]
+        [GameParameters.CustomFloatParameterUI("#autoLOC_SortMyScience_Settings_Tx", asPercentage = true, minValue = 0f, maxValue = 1f, stepCount = 101, toolTip = "#autoLOC_SortMyScience_Settings_Tx_ToolTip")]
 		public float transmissionThreshold = 1.0f;
-		[GameParameters.CustomFloatParameterUI("#autoLOC_SortMyScience_Settings_Lab", logBase = 5, maxValue = 100)]
+		[GameParameters.CustomFloatParameterUI("#autoLOC_SortMyScience_Settings_Lab", asPercentage = true, minValue = 0f, maxValue = 1f, stepCount = 101, toolTip = "#autoLOC_SortMyScience_Settings_LabTooltip")]
 		public float labThreshold = 0.0f;
 		[GameParameters.CustomParameterUI("#autoLOC_SortMyScience_Settings_Discard", toolTip = "#autoLOC_SortMyScience_Settings_DiscardTooltip")]
 		public bool discardDeadScience = true;

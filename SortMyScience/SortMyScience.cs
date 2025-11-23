@@ -199,8 +199,9 @@ namespace SortMyScience
 
 				}
 			}
-
+#if DEBUG
 			SMSLog("Science results prefab processed...");
+#endif
 		}
 
 		private void OnSpawn(ExperimentsResultDialog dialog, SortMyScienceDialog sortMyScienceDialog)
@@ -298,8 +299,9 @@ namespace SortMyScience
 					continue;
 
 				//Get the antenna
-                IScienceDataTransmitter bestTransmitter = ScienceUtil.GetBestTransmitter(vessel);
-				ModuleDataTransmitter antenna = (ModuleDataTransmitter)bestTransmitter;
+				IScienceDataTransmitter bestTransmitter = ScienceUtil.GetBestTransmitter(vessel);
+				//ModuleDataTransmitter antenna = (ModuleDataTransmitter)bestTransmitter;
+                ModuleScienceLab lab = page.labSearch.NextLabForData;
 
                 //Transmit everything above efficiency threshold
                 //xmitDataScalar is the transmission efficiency
@@ -313,10 +315,9 @@ namespace SortMyScience
 					bestTransmitter.TransmitData(data);
 					transmitted++;
 				}
-				//Lab everything below threshold if a lab is available
-				else if (page.labSearch.NextLabForDataFound && page.pageData.labValue > 0 && page.scienceValue <= settings.labThreshold)
+                //Lab everything below threshold if a lab is available
+                else if (lab != null && page.pageData.labValue > 0 && (page.scienceValue/page.refValue) <= settings.labThreshold)
 				{
-					ModuleScienceLab lab = page.labSearch.NextLabForData;
 					SMSLog("Lab Process: ", page.pageData);
 					ModuleScienceContainer container = lab.part.FindModuleImplementing<ModuleScienceContainer>();
 					StartCoroutine(lab.ProcessData(page.pageData));
@@ -350,7 +351,7 @@ namespace SortMyScience
 			ScreenMessages.PostScreenMessage(msg, duration: 7.5f);
         }
 
-        public Part GetContainerPart(ScienceData science)
+        private Part GetContainerPart(ScienceData science)
         {
             // Ensure we are in a flight scene and the active vessel is available
             if (FlightGlobals.ActiveVessel != null)
@@ -387,13 +388,11 @@ namespace SortMyScience
         {
             if (o != null && o.Length > 0 && o[0] is ScienceData data)
             {
-                //ScienceUtil.GetExperimentFieldsFromScienceID(data.subjectID, out string bodyName, out string situation, out string biome);
-                //Debug.Log(string.Format("[SortMyScience] {0} : {1} : {2} : {3} : {4}", s, data.subjectID, bodyName, situation, biome));
-                Debug.LogError(string.Format($"[SortMyScience] {s} : {data.subjectID}"));
+                Debug.LogWarning(string.Format($"[SortMyScience] {s} : {data.subjectID}"));
             }
             else
             {
-                Debug.LogError(string.Format("[SortMyScience] " + s, o));
+                Debug.LogWarning(string.Format("[SortMyScience] " + s, o));
             }
         }
 
@@ -401,8 +400,6 @@ namespace SortMyScience
         {
 			if (o != null && o.Length > 0 && o[0] is ScienceData data)
 			{
-				//ScienceUtil.GetExperimentFieldsFromScienceID(data.subjectID, out string bodyName, out string situation, out string biome);
-				//Debug.Log(string.Format("[SortMyScience] {0} : {1} : {2} : {3} : {4}", s, data.subjectID, bodyName, situation, biome));
 				Debug.LogError(string.Format($"[SortMyScience] {s} : {data.subjectID}"));
 			}
 			else
