@@ -38,9 +38,9 @@ namespace SortMyScience
         public override bool HasPresets => false; // No presets
         public override int SectionOrder => 1; // Determines the position in the settings menu
 
-        [GameParameters.CustomFloatParameterUI("#autoLOC_SortMyScience_Settings_Tx", asPercentage = true, stepCount = 5)]
+        [GameParameters.CustomFloatParameterUI("#autoLOC_SortMyScience_Settings_Tx", asPercentage = true, stepCount = 5, toolTip = "#autoLOC_SortMyScience_Settings_Tx_ToolTip")]
 		public float transmissionThreshold = 1.0f;
-		[GameParameters.CustomFloatParameterUI("#autoLOC_SortMyScience_Settings_Lab", asPercentage = true, stepCount = 5)]
+		[GameParameters.CustomFloatParameterUI("#autoLOC_SortMyScience_Settings_Lab", logBase = 5, maxValue = 100)]
 		public float labThreshold = 0.0f;
 		[GameParameters.CustomParameterUI("#autoLOC_SortMyScience_Settings_Discard", toolTip = "#autoLOC_SortMyScience_Settings_DiscardTooltip")]
 		public bool discardDeadScience = true;

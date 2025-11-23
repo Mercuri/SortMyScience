@@ -25,13 +25,12 @@ THE SOFTWARE.
 */
 #endregion
 
+using KSP.Localization;
+using KSP.UI.Screens.Flight.Dialogs;
+using KSP.UI.TooltipTypes;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using System.Linq;
-using KSP.UI.TooltipTypes;
-using KSP.UI.Screens.Flight.Dialogs;
-using KSP.Localization;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -59,7 +58,9 @@ namespace SortMyScience
 
 		private void Awake()
 		{
+#if DEBUG
 			SMSLog("Entering Awake()");
+#endif
 			if (HighLogic.CurrentGame.Mode == Game.Modes.SANDBOX)
 			{
 				Destroy(gameObject);
@@ -80,15 +81,15 @@ namespace SortMyScience
 			ProcessPrefab();
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0019:Use pattern matching", Justification = "Using Pattern Matching breaks following switch statement")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0019:Use pattern matching", Justification = "Using Pattern Matching breaks switch statement")]
         private void Start()
 		{
-            //SMSLog("Entering Start()");
+#if DEBUG
+			SMSLog("Entering Start()");
+#endif
 			SortMyScienceDialog.onDialogSpawn.Add(OnSpawn);
             SortMyScienceDialog.onDialogClose.Add(OnClose);
 			//GameEvents.OnTriggeredDataTransmission.Add(onTriggeredData);
-			//GameEvents.onGamePause.Add(onPause);
-			//GameEvents.onGameUnpause.Add(onUnpause);
 			GameEvents.OnGameSettingsApplied.Add(OnSettingsApplied);
 
 			settings = HighLogic.CurrentGame.Parameters.CustomParams<SortMyScienceParameters>();
@@ -110,13 +111,13 @@ namespace SortMyScience
 
 		private void OnDestroy()
 		{
-            //SMSLog("Entering OnDestroy()");
+#if DEBUG
+            SMSLog("Entering OnDestroy()");
+#endif
             instance = null;
             SortMyScienceDialog.onDialogSpawn.Remove(OnSpawn);
             SortMyScienceDialog.onDialogClose.Remove(OnClose);
 			//GameEvents.OnTriggeredDataTransmission.Remove(onTriggeredData);
-			//GameEvents.onGamePause.Remove(onPause);
-			//GameEvents.onGameUnpause.Remove(onUnpause);
 			GameEvents.OnGameSettingsApplied.Remove(OnSettingsApplied);
         }
 
@@ -127,7 +128,10 @@ namespace SortMyScience
 
         private void LoadSprite()
 		{
-			Texture2D normal = GameDatabase.Instance.GetTexture("SortMyScience/Resources/SortMyScience_Normal", false);
+#if DEBUG
+            SMSLog("Entering LoadSprite()");
+#endif
+            Texture2D normal = GameDatabase.Instance.GetTexture("SortMyScience/Resources/SortMyScience_Normal", false);
 			Texture2D highlight = GameDatabase.Instance.GetTexture("SortMyScience/Resources/SortMyScience_Highlight", false);
 			Texture2D active = GameDatabase.Instance.GetTexture("SortMyScience/Resources/SortMyScience_Active", false);
 
@@ -143,7 +147,9 @@ namespace SortMyScience
 
         private void ProcessPrefab()
 		{
-			SMSLog("Entering processPrefab()");
+#if DEBUG
+            SMSLog("Entering ProcessPrefab()");
+#endif
 			GameObject prefab = AssetBase.GetPrefab("ScienceResultsDialog");
 
 			if (prefab == null)
@@ -156,14 +162,12 @@ namespace SortMyScience
 			for (int i = buttons.Length - 1; i >= 0; i--)
 			{
 				Button b = buttons[i];
-                //RelayLog("Dialog Button: {0}", b.name);
 				if (b.name == "ButtonPrev")
 					dialogListener.buttonPrev = b;
 				else if (b.name == "ButtonNext")
 					dialogListener.buttonNext = b;
 				else if (b.name == "ButtonKeep")
 				{
-                    //RelayLog("Cloning Keep Button...");
                     dialogListener.buttonTransfer = Instantiate(b) as Button;
 
                     dialogListener.buttonTransfer.name = "ButtonTransfer";
@@ -177,8 +181,7 @@ namespace SortMyScience
 
 					if (spritesLoaded)
                     {
-                        //RelayLog("Assigning Sprites To Transfer Button...");
-                        Selectable select = dialogListener.buttonTransfer.GetComponent<Selectable>();
+						Selectable select = dialogListener.buttonTransfer.GetComponent<Selectable>();
 
 						if (select != null)
 						{
@@ -202,7 +205,9 @@ namespace SortMyScience
 
 		private void OnSpawn(ExperimentsResultDialog dialog, SortMyScienceDialog sortMyScienceDialog)
 		{
-			SMSLog("Entering onSpawn()");
+#if DEBUG
+            SMSLog("Entering OnSpawn()");
+#endif
 			if (dialog == null)
 				return;
 
@@ -210,26 +215,17 @@ namespace SortMyScience
 
 			var buttons = resultsDialog.GetComponentsInChildren<Button>(true);
 
-            //SortMyScienceLog("1");
-
 			for (int i = buttons.Length - 1; i >= 0; i--)
 			{
 				Button b = buttons[i];
 
-                //SortMyScienceLog("1-1-{0}", i);
-
                 if (b == null)
 					continue;
 
-                //SortMyScienceLog("1-2-{0}", i);
-
                 if (b.name == "ButtonKeep")
                 {
-                    //SortMyScienceLog("1-3-{0}", i);
                     transferButton = Instantiate(sortMyScienceDialog.buttonTransfer, b.transform.parent) as Button;
-
-                    transferButton.onClick.AddListener(OnTransfer);
-
+                    transferButton.onClick.AddListener(OnSortScience);
                     break;
                 }
 			}
@@ -242,8 +238,10 @@ namespace SortMyScience
 
         private void OnClose(ExperimentsResultDialog dialog, SortMyScienceDialog sortMyScienceDialog)
 		{
-            SMSLog("Entering onClose()");
-            if (dialog == null || resultsDialog == null)
+#if DEBUG
+            SMSLog("Entering OnClose()");
+#endif
+			if (dialog == null || resultsDialog == null)
 				return;
 
 			if (dialog == resultsDialog)
@@ -256,7 +254,9 @@ namespace SortMyScience
 
 		public void OnPageChange()
 		{
-            SMSLog("Entering onPageChange()");
+#if DEBUG
+			SMSLog("Entering OnPageChange()");
+#endif
 			if (resultsDialog == null)
 				return;
 
@@ -266,10 +266,12 @@ namespace SortMyScience
 				currentPage.pageData.baseTransmitValue = currentPage.xmitDataScalar;
 		}
 
-		public void OnTransfer()
+		public void OnSortScience()
 		{
-            SMSLog("Entering onTransfer()");
-            if (resultsDialog == null)
+#if DEBUG
+			SMSLog("Entering OnSortScience()");
+#endif
+			if (resultsDialog == null)
 				return;
 
 			if (currentPage == null)
@@ -299,8 +301,9 @@ namespace SortMyScience
                 IScienceDataTransmitter bestTransmitter = ScienceUtil.GetBestTransmitter(vessel);
 				ModuleDataTransmitter antenna = (ModuleDataTransmitter)bestTransmitter;
 
-				//Transmit everything above threshold
-				if (page.xmitDataScalar >= settings.transmissionThreshold && page.scienceValue > 0 && bestTransmitter != null)  //xmitDataScalar is what percentage of the total data is transmitted
+                //Transmit everything above efficiency threshold
+                //xmitDataScalar is the transmission efficiency
+                if (page.xmitDataScalar >= settings.transmissionThreshold && page.scienceValue > 0 && bestTransmitter != null)
 				{
 					SMSLog("Transmit:", page.pageData);
 					List<ScienceData> data = new List<ScienceData>
@@ -325,7 +328,7 @@ namespace SortMyScience
 					Part p = GetContainerPart(page.pageData);
                     if (p == null)
                     {
-						SMSLog("Could not find container for Discard. ", page.pageData);
+						SMSWarn("Could not find container for Discard. ", page.pageData);
                     }
 					else
 					{
@@ -362,19 +365,50 @@ namespace SortMyScience
                     }
                 }
             }
-            // If not found (e.g., vessel unloaded, data corrupted, or in editor scene)
+			// If not found (e.g., vessel unloaded, data corrupted, or in editor scene)
             return null;
         }
 		
 		public static void SMSLog(string s, params object[] o)
 		{
+			if (o != null && o.Length > 0 && o[0] is ScienceData data)
+			{
+				//ScienceUtil.GetExperimentFieldsFromScienceID(data.subjectID, out string bodyName, out string situation, out string biome);
+				//Debug.Log(string.Format("[SortMyScience] {0} : {1} : {2} : {3} : {4}", s, data.subjectID, bodyName, situation, biome));
+				Debug.Log(string.Format($"[SortMyScience] {s} : {data.subjectID}"));
+			}
+			else
+			{
+				Debug.Log(string.Format("[SortMyScience] " + s, o));
+			}
+        }
+
+        public static void SMSWarn(string s, params object[] o)
+        {
             if (o != null && o.Length > 0 && o[0] is ScienceData data)
             {
-                ScienceUtil.GetExperimentFieldsFromScienceID(data.subjectID, out string bodyName, out string situation, out string biome);
-                Debug.Log(string.Format("[SortMyScience] {0} : {1} : {2} : {3} : {4}", s, data.subjectID, bodyName, situation, biome));
+                //ScienceUtil.GetExperimentFieldsFromScienceID(data.subjectID, out string bodyName, out string situation, out string biome);
+                //Debug.Log(string.Format("[SortMyScience] {0} : {1} : {2} : {3} : {4}", s, data.subjectID, bodyName, situation, biome));
+                Debug.LogError(string.Format($"[SortMyScience] {s} : {data.subjectID}"));
             }
             else
-                Debug.Log(string.Format("[SortMyScience] " + s, o));
+            {
+                Debug.LogError(string.Format("[SortMyScience] " + s, o));
+            }
+        }
+
+        public static void SMSError(string s, params object[] o)
+        {
+			if (o != null && o.Length > 0 && o[0] is ScienceData data)
+			{
+				//ScienceUtil.GetExperimentFieldsFromScienceID(data.subjectID, out string bodyName, out string situation, out string biome);
+				//Debug.Log(string.Format("[SortMyScience] {0} : {1} : {2} : {3} : {4}", s, data.subjectID, bodyName, situation, biome));
+				Debug.LogError(string.Format($"[SortMyScience] {s} : {data.subjectID}"));
+			}
+			else
+			{
+				Debug.LogError(string.Format("[SortMyScience] " + s, o));
+			}
         }
     }
 }
