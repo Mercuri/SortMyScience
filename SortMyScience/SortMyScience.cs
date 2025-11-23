@@ -30,6 +30,7 @@ using KSP.UI.Screens.Flight.Dialogs;
 using KSP.UI.TooltipTypes;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Reflection;
 using UnityEngine;
 using UnityEngine.UI;
@@ -283,9 +284,23 @@ namespace SortMyScience
 
             var vessel = FlightGlobals.ActiveVessel;
 
+			//Set up counters
 			int transmitted = 0, labbed = 0, discarded = 0, kept = 0;
+            //Get the antenna
+            IScienceDataTransmitter bestTransmitter = ScienceUtil.GetBestTransmitter(vessel);
 
-            for (int i = resultsDialog.pages.Count - 1; i >= 0; i--)
+			ModuleScienceContainer container = GetContainerPart(resultsDialog.pages[0].pageData).FindModuleImplementing<ModuleScienceContainer>();
+
+#if DEBUG
+			int totalResults = resultsDialog.pages.Count;
+            int totalScienceCount = container.GetScienceCount();
+			if(totalResults != totalScienceCount)
+			{
+				SMSError($"Results Page Count ({totalResults}) does not equal Science Count ({totalScienceCount})");
+			}
+#endif
+
+			for (int i = resultsDialog.pages.Count - 1; i >= 0; i--)
 			{
 				ExperimentResultDialogPage page = resultsDialog.pages[i];
 
@@ -298,38 +313,32 @@ namespace SortMyScience
 				if (page.host == null)
 					continue;
 
-				//Get the antenna
-				IScienceDataTransmitter bestTransmitter = ScienceUtil.GetBestTransmitter(vessel);
-				//ModuleDataTransmitter antenna = (ModuleDataTransmitter)bestTransmitter;
                 ModuleScienceLab lab = page.labSearch.NextLabForData;
 
                 //Transmit everything above efficiency threshold
                 //xmitDataScalar is the transmission efficiency
-                if (page.xmitDataScalar >= settings.transmissionThreshold && page.scienceValue > 0 && bestTransmitter != null)
+                if (page.xmitDataScalar >= settings.transmissionThreshold && page.scienceValue > 0 && bestTransmitter != null  && bestTransmitter.CanTransmit())
 				{
 					SMSLog("Transmit:", page.pageData);
-					List<ScienceData> data = new List<ScienceData>
-                    {
-                        page.pageData
-                    };
+					List<ScienceData> data = new List<ScienceData> { page.pageData };
 					bestTransmitter.TransmitData(data);
 					transmitted++;
 				}
                 //Lab everything below threshold if a lab is available
-                else if (lab != null && page.pageData.labValue > 0 && (page.scienceValue/page.refValue) <= settings.labThreshold)
+                else if (page.labSearch.Error == ScienceLabSearch.SearchError.NONE && page.pageData.labValue > 0 && (page.scienceValue/page.refValue) <= settings.labThreshold)
 				{
 					SMSLog("Lab Process: ", page.pageData);
-					ModuleScienceContainer container = lab.part.FindModuleImplementing<ModuleScienceContainer>();
 					StartCoroutine(lab.ProcessData(page.pageData));
 					labbed++;
 				}
 				//Discard everything with no value
-				else if (page.pageData.labValue == 0f && page.scienceValue == 0f)
+				else if (settings.discardDeadScience && page.remainingScience == 0f && page.labSearch.Error == ScienceLabSearch.SearchError.ALL_RESEARCHED)
 				{
 					Part p = GetContainerPart(page.pageData);
                     if (p == null)
                     {
 						SMSWarn("Could not find container for Discard. ", page.pageData);
+						kept++; //In the error case we end up keeping the data
                     }
 					else
 					{
@@ -346,6 +355,14 @@ namespace SortMyScience
 					kept++;
 				}
             }
+#if DEBUG
+			int expectedCount = totalScienceCount - (discarded + labbed + transmitted);
+			if (expectedCount != container.GetScienceCount())
+			{
+				SMSError($"Expected count ({expectedCount}) does not match actual count ({container.GetScienceCount()})");
+			}
+#endif
+
 			resultsDialog.Dismiss();
 			string msg = Localizer.Format("#autoLOC_SortMyScience_CompleteMsg", transmitted, labbed, discarded, kept);
 			ScreenMessages.PostScreenMessage(msg, duration: 7.5f);
@@ -374,8 +391,6 @@ namespace SortMyScience
 		{
 			if (o != null && o.Length > 0 && o[0] is ScienceData data)
 			{
-				//ScienceUtil.GetExperimentFieldsFromScienceID(data.subjectID, out string bodyName, out string situation, out string biome);
-				//Debug.Log(string.Format("[SortMyScience] {0} : {1} : {2} : {3} : {4}", s, data.subjectID, bodyName, situation, biome));
 				Debug.Log(string.Format($"[SortMyScience] {s} : {data.subjectID}"));
 			}
 			else
