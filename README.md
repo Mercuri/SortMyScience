@@ -30,9 +30,9 @@ Sort My Science evaluates every experiment in a results dialog:
 - Customize the options in the Settings menu
 
 ## ⬇️ Installation
-Install via CKAN
+CKAN Installation Pending
 
-Alternatively extract the latest release into your KSP\Gamedata folder
+In the meantime, extract the latest release into your KSP\Gamedata folder
 
 ## 🔭 Compatibility
 
