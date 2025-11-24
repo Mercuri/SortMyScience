@@ -2,11 +2,11 @@
  
  ## 🧪 SortMyScience
 
-You just circumnavigated Duna, hopped over to Ike, confirmed that Dres is _probably_ real, and left your science collector running the whole time. Now your poor science container is bursting with hundreds of random experiments, and that “Review Stored Data” button is staring back at you like a boss fight.
+You just circumnavigated Duna, hopped over to Ike, confirmed that Dres is _probably_ real, and left poor Bob running experiments the whole time. Now your science container is jam-packed with hundreds of random results, and that “Review Stored Data” button is staring at you like a boss fight.
 
 Some results are perfect for transmission, some belong in a lab, some are worth bringing home… and some are worthless duds you’d rather pretend never happened. And did I mention there are hundreds of them?
 
-Time to press the panic button.
+Time to hit the panic button.
 Time to SORT MY SCIENCE!
 
 ## 🚀 Highlights
