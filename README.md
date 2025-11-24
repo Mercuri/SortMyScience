@@ -2,11 +2,12 @@
  
  ## 🧪 SortMyScience
 
-You just circumnavigated Duna, visited Ike, Discovered that Dres actually exists (lies!) and accidentally left ForScience! running the entire time.  Oops!  Now you have hundreds of random experiments stored in your science container and that "Review Stored Data" button is looking rather intimidating...
+You just circumnavigated Duna, hopped over to Ike, confirmed that Dres is _probably_ real, and left ForScience! running the whole time. Now your poor science container is bursting with hundreds of random experiments, and that “Review Stored Data” button is staring back at you like a boss fight.
 
-Some can be transmitted for full science, some are repeats best tossed into a processing lab, and some you'd rather keep for return and recovery.  Oh, and some are duds without any scientific value left whatsoever...DOH!  And did I mention there are HUNDREDS of them?  What are you going to do?
+Some results are perfect for transmission, some belong in a lab, some are worth bringing home… and some are worthless duds you’d rather pretend never happened. And did I mention there are hundreds of them?
 
-Well, it's time to SORT MY SCIENCE!
+Time to press the panic button.
+Time to SORT MY SCIENCE!
 
 ## 🚀 Highlights
 
