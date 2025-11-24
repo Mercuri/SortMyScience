@@ -6,8 +6,7 @@ You just circumnavigated Duna, hopped over to Ike, confirmed that Dres is _proba
 
 Some results are perfect for transmission, some belong in a lab, some are worth bringing home… and some are worthless duds you’d rather pretend never happened. And did I mention there are hundreds of them?
 
-Time to hit the panic button.
-
+Time to hit the panic button.<br>
 Time to SORT MY SCIENCE!
 
 ## 🚀 Highlights
