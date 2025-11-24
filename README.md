@@ -21,13 +21,13 @@ Time to SORT MY SCIENCE!
 Sort My Science automatically processes every stored experiment using a simple, configurable set of rules:
 
 ### 1. Transmit if Worth It
-If an experiment’s transmit value vs. recovery value meets or exceeds your transmit threshold (default 100%), and an antenna is available, the data is immediately transmitted using the best antenna onboard.
+If an experiment’s transmit value vs. recovery value meets or exceeds your transmit threshold _(default 100%)_, and an antenna is available, the data is immediately transmitted using the best antenna onboard.
 
 ### 2. Send to Lab if Recovery Is Low
-If it isn’t transmitted and its remaining recovery value has dropped below your lab threshold (default 0%), the experiment is routed to the best available science lab for processing.
+If it isn’t transmitted and its remaining recovery value has dropped below your lab threshold _(default 0%)_, the experiment is routed to the best available science lab for processing.
 
 ### 3. Discard “Dead” Science
-If an experiment has no remaining lab value and no recovery value, it’s considered scientifically exhausted and is discarded automatically (if this option is enabled).
+If an experiment has no remaining lab value and no recovery value, it’s considered scientifically exhausted and is discarded automatically _(if this option is enabled)_.
 
 ### 4. Keep Everything Else
 Any experiment that doesn’t meet the above conditions is safely kept for later review or recovery.
