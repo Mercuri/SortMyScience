@@ -30,7 +30,6 @@ using KSP.UI.Screens.Flight.Dialogs;
 using KSP.UI.TooltipTypes;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Reflection;
 using UnityEngine;
 using UnityEngine.UI;
@@ -90,7 +89,6 @@ namespace SortMyScience
 #endif
 			SortMyScienceDialog.onDialogSpawn.Add(OnSpawn);
             SortMyScienceDialog.onDialogClose.Add(OnClose);
-			//GameEvents.OnTriggeredDataTransmission.Add(onTriggeredData);
 			GameEvents.OnGameSettingsApplied.Add(OnSettingsApplied);
 
 			settings = HighLogic.CurrentGame.Parameters.CustomParams<SortMyScienceParameters>();
@@ -118,7 +116,6 @@ namespace SortMyScience
             instance = null;
             SortMyScienceDialog.onDialogSpawn.Remove(OnSpawn);
             SortMyScienceDialog.onDialogClose.Remove(OnClose);
-			//GameEvents.OnTriggeredDataTransmission.Remove(onTriggeredData);
 			GameEvents.OnGameSettingsApplied.Remove(OnSettingsApplied);
         }
 
@@ -270,9 +267,8 @@ namespace SortMyScience
 
 		public void OnSortScience()
 		{
-#if DEBUG
-			SMSLog("Entering OnSortScience()");
-#endif
+			SMSLog("Sorting Science!");
+
 			if (resultsDialog == null)
 				return;
 
@@ -288,17 +284,6 @@ namespace SortMyScience
 			int transmitted = 0, labbed = 0, discarded = 0, kept = 0;
             //Get the antenna
             IScienceDataTransmitter bestTransmitter = ScienceUtil.GetBestTransmitter(vessel);
-
-			ModuleScienceContainer container = GetContainerPart(resultsDialog.pages[0].pageData).FindModuleImplementing<ModuleScienceContainer>();
-
-#if DEBUG
-			int totalResults = resultsDialog.pages.Count;
-            int totalScienceCount = container.GetScienceCount();
-			if(totalResults != totalScienceCount)
-			{
-				SMSError($"Results Page Count ({totalResults}) does not equal Science Count ({totalScienceCount})");
-			}
-#endif
 
 			for (int i = resultsDialog.pages.Count - 1; i >= 0; i--)
 			{
@@ -322,31 +307,24 @@ namespace SortMyScience
 					SMSLog("Transmit:", page.pageData);
 					List<ScienceData> data = new List<ScienceData> { page.pageData };
 					bestTransmitter.TransmitData(data);
-					transmitted++;
+                    DumpData(page.pageData);    // The science data in the results dialog seems to be a copy, so we need to dump it from the original container
+                    transmitted++;
 				}
                 //Lab everything below threshold if a lab is available
-                else if (page.labSearch.Error == ScienceLabSearch.SearchError.NONE && page.pageData.labValue > 0 && (page.scienceValue/page.refValue) <= settings.labThreshold)
+                else if (page.labSearch.Error == ScienceLabSearch.SearchError.NONE && page.pageData.labValue > 0 && (float)Math.Round((double)page.scienceValue / page.refValue, 1) <= settings.labThreshold)
 				{
-					SMSLog("Lab Process: ", page.pageData);
-					StartCoroutine(lab.ProcessData(page.pageData));
-					labbed++;
+					SMSLog("Lab Process:", page.pageData);
+					resultsDialog.StartCoroutine(lab.ProcessData(page.pageData));
+					DumpData(page.pageData);    // The science data in the results dialog seems to be a copy, so we need to dump it from the original container
+                    labbed++;
 				}
 				//Discard everything with no value
-				else if (settings.discardDeadScience && page.remainingScience == 0f && page.labSearch.Error == ScienceLabSearch.SearchError.ALL_RESEARCHED)
+				else if (settings.discardDeadScience && Math.Round((double)page.remainingScience, 1) == 0.0 && (page.labSearch.Error == ScienceLabSearch.SearchError.ALL_RESEARCHED || page.pageData.labValue == 0f))
 				{
-					Part p = GetContainerPart(page.pageData);
-                    if (p == null)
-                    {
-						SMSWarn("Could not find container for Discard. ", page.pageData);
-						kept++; //In the error case we end up keeping the data
-                    }
-					else
-					{
-                        SMSLog("Discard:", page.pageData);
-                        ModuleScienceContainer c = p.FindModuleImplementing<ModuleScienceContainer>();
-						c.DumpData(page.pageData);
-						discarded++;
-					}
+					SMSLog("Discard:", page.pageData);
+					DumpData(page.pageData);
+					discarded++;
+					
                 }
 				//Keep the rest (Returnables, Transmittables w/o Connection, and Lab-worthy data without an available lab)
 				else
@@ -355,17 +333,11 @@ namespace SortMyScience
 					kept++;
 				}
             }
-#if DEBUG
-			int expectedCount = totalScienceCount - (discarded + labbed + transmitted);
-			if (expectedCount != container.GetScienceCount())
-			{
-				SMSError($"Expected count ({expectedCount}) does not match actual count ({container.GetScienceCount()})");
-			}
-#endif
 
-			resultsDialog.Dismiss();
+            resultsDialog.Dismiss();
 			string msg = Localizer.Format("#autoLOC_SortMyScience_CompleteMsg", transmitted, labbed, discarded, kept);
 			ScreenMessages.PostScreenMessage(msg, duration: 7.5f);
+			SMSLog(msg);
         }
 
         private Part GetContainerPart(ScienceData science)
@@ -384,7 +356,18 @@ namespace SortMyScience
                 }
             }
 			// If not found (e.g., vessel unloaded, data corrupted, or in editor scene)
+			SMSError($"Could not find science container for {science.subjectID}");
             return null;
+        }
+
+		private void DumpData(ScienceData data)
+		{
+            Part p = GetContainerPart(data);
+            if (p != null)
+			{
+                ModuleScienceContainer c = p.FindModuleImplementing<ModuleScienceContainer>();
+				c?.DumpData(data);
+            }
         }
 		
 		public static void SMSLog(string s, params object[] o)
