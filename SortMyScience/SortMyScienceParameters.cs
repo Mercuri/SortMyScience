@@ -1,7 +1,7 @@
 ﻿#region license
 /*The MIT License (MIT)
 
-SortMyScienceParameters - In game settings for Science Transfer
+SortMyScienceParameters - In game settings for Sort My Science
 
 Copyright (c) 2025 Mercuri
 

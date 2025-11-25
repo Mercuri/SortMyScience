@@ -1,7 +1,7 @@
 ﻿#region license
 /*The MIT License (MIT)
 
-SortMyScience - Sort through all that stored science!
+Sort My Science - Automatically sorts every experiment in your science containers!
 
 Copyright (c) 2025 Mercuri
 
@@ -300,9 +300,11 @@ namespace SortMyScience
 
                 ModuleScienceLab lab = page.labSearch.NextLabForData;
 
-                //Transmit everything above efficiency threshold
-                //xmitDataScalar is the transmission efficiency
-                if (page.xmitDataScalar >= settings.transmissionThreshold && page.scienceValue > 0 && bestTransmitter != null  && bestTransmitter.CanTransmit())
+                //Transmit
+                if (page.xmitDataScalar >= settings.transmissionThreshold		// Check Against Trasmission Threshold
+					&& page.scienceValue > 0f									// Make sure experiment has science value
+					&& bestTransmitter != null									// Verify we have a transmitter
+					&& bestTransmitter.CanTransmit())							// Verify we have a connection
 				{
 					SMSLog("Transmit:", page.pageData);
 					List<ScienceData> data = new List<ScienceData> { page.pageData };
@@ -310,21 +312,25 @@ namespace SortMyScience
                     DumpData(page.pageData);    // The science data in the results dialog seems to be a copy, so we need to dump it from the original container
                     transmitted++;
 				}
-                //Lab everything below threshold if a lab is available
-                else if (page.labSearch.Error == ScienceLabSearch.SearchError.NONE && page.pageData.labValue > 0 && (float)Math.Round((double)page.scienceValue / page.refValue, 1) <= settings.labThreshold)
+                //Lab
+                else if (page.labSearch.Error == ScienceLabSearch.SearchError.NONE									// Check that a Lab is available
+					&& page.pageData.labValue > 0																	// Make sure experiment has research value
+					&& (float)Math.Round((double)page.scienceValue / page.refValue, 1) <= settings.labThreshold)	// Check recovery percentage is below lab threshold
 				{
-					SMSLog("Lab Process:", page.pageData);
+					SMSLog("Lab:", page.pageData);
 					resultsDialog.StartCoroutine(lab.ProcessData(page.pageData));
 					DumpData(page.pageData);    // The science data in the results dialog seems to be a copy, so we need to dump it from the original container
                     labbed++;
 				}
-				//Discard everything with no value
-				else if (settings.discardDeadScience && Math.Round((double)page.remainingScience, 1) == 0.0 && (page.labSearch.Error == ScienceLabSearch.SearchError.ALL_RESEARCHED || page.pageData.labValue == 0f))
+				//Discard
+				else if (settings.discardDeadScience											// Check if discarding is enabled
+					&& Math.Round((double)page.remainingScience, 1) == 0.0						// Make sure experiment has virtually no value
+					&& (page.labSearch.Error == ScienceLabSearch.SearchError.ALL_RESEARCHED		// Verify that science has already been researched ...
+					|| page.pageData.labValue == 0f))											// ... Or that science has no research value
 				{
 					SMSLog("Discard:", page.pageData);
 					DumpData(page.pageData);
 					discarded++;
-					
                 }
 				//Keep the rest (Returnables, Transmittables w/o Connection, and Lab-worthy data without an available lab)
 				else
@@ -374,7 +380,7 @@ namespace SortMyScience
 		{
 			if (o != null && o.Length > 0 && o[0] is ScienceData data)
 			{
-				Debug.Log(string.Format($"[SortMyScience] {s} : {data.subjectID}"));
+                Debug.Log(string.Format($"[SortMyScience] {s} : {data.subjectID}"));
 			}
 			else
 			{
