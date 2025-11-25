@@ -2,26 +2,35 @@
  
  ## 🧪 SortMyScience
 
-You just circumnavigated Duna, visited Ike, Discovered that Dres actually exists (lies!) and accidentally left ForScience! running the entire time.  Oops!  Now you have hundreds of random experiments stored in your science container and that "Review Stored Data" button is looking rather intimidating...
+You just circumnavigated Duna, hopped over to Ike, confirmed that Dres is _probably_ real, and left poor Bob running experiments the whole time. Now your science container is jam-packed with hundreds of random results, and that “Review Stored Data” button is staring at you like a boss fight.
 
-Some can be transmitted for full science, some are repeats best tossed into a processing lab, and some you'd rather keep for return and recovery.  Oh, and some are duds without any scientific value left whatsoever...DOH!  And did I mention there are HUNDREDS of them?  What are you going to do?
+Some results are perfect for transmission, some belong in a lab, some are worth bringing home… and some are worthless duds you’d rather pretend never happened. And did I mention there are hundreds of them?
 
-Well, it's time to SORT MY SCIENCE!
+Time to hit the panic button.<br>
+Time to SORT MY SCIENCE!
 
 ## 🚀 Highlights
 
-- Automatically sort through all the experiments in your science containers!
-- Transmit, Discard, Process, and Keep experiments based on configurable thresholds!
-- Just takes one click!
-- MOAR BULLET POINTS AND EXCLAMATION MARKS!!!!11!
+- Automatically sorts every experiment in your science containers!
+- Transmit, discard, process, or keep data using fully configurable thresholds!
+- All done with one glorious click!
+- MOAR BULLET POINTS! MOAR EXCLAMATION MARKS!!!11!
 
-## ℹ️ Overview
+## 📘 How It Works
 
-Sort My Science evaluates every experiment in a results dialog:
-1. If the transmit value versus the recovery value is above the threshold (default 100%), then it immediately transmits the science back home through the best antenna available (if a connection is available).
-2. Otherwise, it checks to see if the recovery value is below a certain percentage of the original full value (default 0%).  If so, then it shoves that experiment into the best available lab (if an available lab exists).
-3. Then it checks to see if the experiment has no lab or recovery value.  If so, then it just discards the experiment.
-4. Everything else is kept as is.
+Sort My Science automatically processes every stored experiment using a simple, configurable set of rules:
+
+### 1. Transmit if Worth It
+If an experiment’s transmit value vs. recovery value meets or exceeds your transmit threshold _(default 100%)_, and an antenna is available, the data is immediately transmitted using the best antenna onboard.
+
+### 2. Send to Lab if Recovery Is Low
+If it isn’t transmitted and its remaining recovery value has dropped below your lab threshold _(default 0%)_, the experiment is routed to the best available science lab for processing.
+
+### 3. Discard “Dead” Science
+If an experiment has no remaining lab value and no recovery value, it’s considered scientifically exhausted and is discarded automatically _(if this option is enabled)_.
+
+### 4. Keep Everything Else
+Any experiment that doesn’t meet the above conditions is safely kept for later review or recovery.
 
 ## ✈️ Usage
 - Open the Results Dialog by clicking "Review Science Data" on a science container.
