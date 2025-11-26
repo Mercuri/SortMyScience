@@ -45,7 +45,7 @@ In the meantime, extract the latest release into your KSP\Gamedata folder
 
 ## 🔭 Compatibility
 
-This mod hooks into the stock mechanisms used by the Experiment Results Dialog and therefore should not have any compatibility issues.  It even appears to work with DMagic's Science Relay mod despite using the same mechanism to inject itself into the UI.
+This mod hooks into stock mechanisms wherever possible and therefore should not have any compatibility issues.
 
 ## ✍️ Author
 
