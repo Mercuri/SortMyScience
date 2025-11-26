@@ -272,41 +272,80 @@ namespace SortMyScience
         {
             SMSLog("SortScience: Vessel-wide processing triggered.");
 
-            Vessel v = FlightGlobals.ActiveVessel;
-            if (v == null) return;
+            Vessel vessel = FlightGlobals.ActiveVessel;
+            if (vessel == null)
+                return;
 
-            // Close the dialog because it becomes outdated after processing
             try { resultsDialog?.Dismiss(); } catch { }
 
-            // Find all containers on the vessel (IScienceDataContainer)
-            List<IScienceDataContainer> containers = v.FindPartModulesImplementing<IScienceDataContainer>();
+            List<IScienceDataContainer> containers = vessel.FindPartModulesImplementing<IScienceDataContainer>();
             if (containers == null || containers.Count == 0)
             {
                 SMSLog("No science containers found on vessel.");
                 return;
             }
 
-            // Gather all science packets and their owning container
-            List<(ScienceData data, IScienceDataContainer container)> allScience = EnumerateAllScienceOnVessel(containers);
+            // --------------------------------------------
+            //   BUILD FAST LOOKUP TABLES (MAJOR SPEEDUP)
+            // --------------------------------------------
+
+            // Cache experiment modules by experimentID
+            Dictionary<string, ModuleScienceExperiment> expModuleCache = new Dictionary<string, ModuleScienceExperiment>(64);
+            foreach (Part p in vessel.parts)
+            {
+                var exps = p.FindModulesImplementing<ModuleScienceExperiment>();
+                for (int i = 0; i < exps.Count; i++)
+                {
+                    ModuleScienceExperiment m = exps[i];
+                    if (!expModuleCache.ContainsKey(m.experimentID))
+                        expModuleCache.Add(m.experimentID, m);
+                }
+            }
+
+            // Cache subjects once
+            Dictionary<string, ScienceSubject> subjCache = new Dictionary<string, ScienceSubject>(256);
+
+            // Pre-scan all science on vessel — avoids N^2 lookups.
+            List<(ScienceData data, IScienceDataContainer container, string expID)> allScience
+                = new List<(ScienceData, IScienceDataContainer, string)>(256);
+
+            foreach (var c in containers)
+            {
+                var ds = c.GetData();
+                if (ds == null) continue;
+
+                foreach (var d in ds)
+                {
+                    string expID = GetExperimentIDFromSubjectID(d.subjectID);
+                    allScience.Add((d, c, expID));
+                }
+            }
 
             int transmitted = 0, labbed = 0, discarded = 0, kept = 0;
+
+            // --------------------------------------------
+            //           PROCESS EACH SCIENCE PACKET
+            // --------------------------------------------
 
             foreach (var entry in allScience)
             {
                 ScienceData data = entry.data;
                 IScienceDataContainer container = entry.container;
+                string experimentID = entry.expID;
 
-                int sanityCheck = container.GetData().Length;
-                int keepBefore = kept;
-
-                if (data == null || container == null)
+                if (data == null || container == null || string.IsNullOrEmpty(experimentID))
                 {
                     kept++;
                     continue;
                 }
 
-                // subject (for remaining/scienceCap)
-                ScienceSubject subj = ResearchAndDevelopment.GetSubjectByID(data.subjectID);
+                // Cached subject lookup
+                if (!subjCache.TryGetValue(data.subjectID, out ScienceSubject subj))
+                {
+                    subj = ResearchAndDevelopment.GetSubjectByID(data.subjectID);
+                    subjCache[data.subjectID] = subj;
+                }
+
                 if (subj == null)
                 {
                     SMSLog("MissingSubjectKeep", data);
@@ -314,21 +353,7 @@ namespace SortMyScience
                     continue;
                 }
 
-                // extract experimentID from subjectID (subjectID format: "experimentID@...").
-                string experimentID = GetExperimentIDFromSubjectID(data.subjectID);
-                if (string.IsNullOrEmpty(experimentID))
-                {
-                    SMSLog("SubjectParseFailKeep", data);
-                    kept++;
-                    continue;
-                }
-
-                // Try to find the ModuleScienceExperiment that corresponds to this experimentID.
-                // Prefer the module values because the dialog uses the module's settings (dataScale, xmitDataScalar).
-                ModuleScienceExperiment expModule = FindExperimentModuleForData(v, experimentID);
-
-                // If no exp module on vessel (data might have been moved, produced by lab, etc.),
-                // fall back to the experiment definition stored in ResearchAndDevelopment.
+                // Experiment definition (cached by KSP already)
                 ScienceExperiment expDef = ResearchAndDevelopment.GetExperiment(experimentID);
                 if (expDef == null)
                 {
@@ -337,43 +362,42 @@ namespace SortMyScience
                     continue;
                 }
 
-                // Compute authoritative fullValue (what the dialog shows as the experiment's full value)
-                // Prefer module's dataScale if module exists; otherwise use experiment definition's dataScale/baseValue.
-                float dataScale = expDef != null ? expDef.dataScale : 1.0f;
-                float baseValue = expDef != null ? expDef.baseValue : 0f;
+                // Fast lookup: experiment module (if exists)
+                expModuleCache.TryGetValue(experimentID, out ModuleScienceExperiment expModule);
 
-                // FULL (reference) value the Results Dialog displays
-                // NOTE: do NOT multiply by data.dataAmount — that field isn't the dialog's science amount.
+                // Compute dialog-true values
+                float baseValue = expDef.baseValue;
+                float dataScale = expDef.dataScale;
                 float fullValue = baseValue * dataScale;
+
                 if (fullValue <= 0f)
                 {
-                    // fallback conservative behaviour
                     kept++;
                     continue;
                 }
 
-                // Remaining science available for this subject (cap - current)
                 float remaining = subj.scienceCap - subj.science;
-                if (remaining < 0f) remaining = 0f;
+                if (remaining < 0f)
+                    remaining = 0f;
 
-                // Recovery value the dialog would display: min(fullValue, remaining)
                 float recoveryValue = Mathf.Min(fullValue, remaining);
 
-                // Lab value is stored on ScienceData and is authoritative
                 float labValue = data.labValue;
 
-                // xmit scalar: get from module if available; otherwise fall back to experiment default (1.0)
-                float xmitScalar = expModule != null ? expModule.xmitDataScalar : 1.0f;
-
-                // transmitValue and fractions (use fractions 0..1 for thresholds)
+                float xmitScalar = expModule != null ? expModule.xmitDataScalar : 1f;
                 float transmitValue = recoveryValue * xmitScalar;
-                float transmitFrac = transmitValue / fullValue;     // 0..1
-                float remainingFrac = recoveryValue / fullValue;    // 0..1
+
+                float transmitFrac = transmitValue / fullValue;
+                float remainingFrac = recoveryValue / fullValue;
 
                 bool allResearched = subj.science >= subj.scienceCap;
                 bool hasLabValue = labValue > 0f;
 
-                // 1) Transmit if meets threshold (thresholds are fractions 0..1)
+                // -------------------------------
+                //          SORTING RULES
+                // -------------------------------
+
+                // 1) TRANSMIT
                 if (transmitFrac >= settings.txThreshold)
                 {
                     if (TransmitScience(data, container))
@@ -383,17 +407,17 @@ namespace SortMyScience
                     continue;
                 }
 
-                // 2) Lab (lab-before-discard)
+                // 2) LAB
                 if (hasLabValue && remainingFrac <= settings.labThreshold)
                 {
-                    if (SendToLab(data, container, v))
+                    if (SendToLab(data, container, vessel))
                         labbed++;
                     else
                         kept++;
                     continue;
                 }
 
-                // 3) Discard duds (no lab value and below discardThreshold or fully researched)
+                // 3) DISCARD
                 if (settings.discardDuds && !hasLabValue &&
                     (remainingFrac <= settings.discardThreshold || allResearched))
                 {
@@ -404,27 +428,19 @@ namespace SortMyScience
                     continue;
                 }
 
-                // 4) Keep otherwise
+                // 4) KEEP
                 kept++;
             }
 
-            // Final message & log
-            string msg = Localizer.Format("#autoLOC_SortMyScience_CompleteMsg", transmitted, labbed, discarded, kept);
+            // --------------------------------------------
+            //              FINAL MESSAGE
+            // --------------------------------------------
+
+            string msg = Localizer.Format("#autoLOC_SortMyScience_CompleteMsg",
+                                          transmitted, labbed, discarded, kept);
+
             ScreenMessages.PostScreenMessage(msg, 7.5f, ScreenMessageStyle.UPPER_CENTER);
             SMSLog(msg);
-
-        }
-
-        private List<(ScienceData, IScienceDataContainer)> EnumerateAllScienceOnVessel(List<IScienceDataContainer> containers)
-        {
-            var list = new List<(ScienceData, IScienceDataContainer)>();
-            foreach (var c in containers)
-            {
-                ScienceData[] ds = c.GetData();
-                if (ds == null) continue;
-                foreach (var d in ds) list.Add((d, c));
-            }
-            return list;
         }
 
         private string GetExperimentIDFromSubjectID(string subjectID)
@@ -433,20 +449,6 @@ namespace SortMyScience
             int i = subjectID.IndexOf('@');
             if (i <= 0) return null;
             return subjectID.Substring(0, i);
-        }
-
-        private ModuleScienceExperiment FindExperimentModuleForData(Vessel v, string experimentID)
-        {
-            if (v == null || string.IsNullOrEmpty(experimentID)) return null;
-            foreach (Part p in v.parts)
-            {
-                foreach (var exp in p.FindModulesImplementing<ModuleScienceExperiment>())
-                {
-                    if (exp != null && exp.experimentID == experimentID)
-                        return exp;
-                }
-            }
-            return null;
         }
 
         private bool TransmitScience(ScienceData d, IScienceDataContainer c)

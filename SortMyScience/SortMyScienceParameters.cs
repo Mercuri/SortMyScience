@@ -26,32 +26,71 @@ THE SOFTWARE.
 #endregion
 
 using KSP.Localization;
+using System.Reflection;
 
 namespace SortMyScience
 {
-	public class SortMyScienceParameters : GameParameters.CustomParameterNode
-	{
-        public override string Title => string.Empty; // Section title in settings
-        public override string DisplaySection => "#autoLOC_SortMyScience_Title"; // Name in the settings menu
-        public override string Section => "#autoLOC_SortMyScience_Title"; // Internal category
-        public override GameParameters.GameMode GameMode => GameParameters.GameMode.SCIENCE | GameParameters.GameMode.CAREER; // Available in game modes with science
-        public override bool HasPresets => false; // No presets
-        public override int SectionOrder => 1; // Determines the position in the settings menu
+    public class SortMyScienceParameters : GameParameters.CustomParameterNode
+    {
+        public override string Title => string.Empty;
+        public override string DisplaySection => "#autoLOC_SortMyScience_Title";
+        public override string Section => "#autoLOC_SortMyScience_Title";
+        public override GameParameters.GameMode GameMode =>
+            GameParameters.GameMode.SCIENCE | GameParameters.GameMode.CAREER;
 
-        [GameParameters.CustomFloatParameterUI("#autoLOC_SortMyScience_Settings_Tx", minValue = 0f, maxValue = 1f, stepCount = 101, displayFormat = "P0", toolTip = "#autoLOC_SortMyScience_Settings_Tx_ToolTip")]
-		public float txThreshold = 1f;
-		[GameParameters.CustomFloatParameterUI("#autoLOC_SortMyScience_Settings_Lab", minValue = 0f, maxValue = 1f, stepCount = 101, displayFormat = "P0", toolTip = "#autoLOC_SortMyScience_Settings_LabTooltip")]
-		public float labThreshold = 0.01f;
-		[GameParameters.CustomParameterUI("#autoLOC_SortMyScience_Settings_Discard", toolTip = "#autoLOC_SortMyScience_Settings_DiscardTooltip")]
-		public bool discardDuds = true;
+        public override bool HasPresets => false;
+        public override int SectionOrder => 35;
+
+        // --- PARAMETERS ---
+
+        [GameParameters.CustomFloatParameterUI(
+            "#autoLOC_SortMyScience_Settings_Tx",
+            minValue = 0f,
+            maxValue = 1f,
+            stepCount = 101,
+            displayFormat = "P0",
+            toolTip = "#autoLOC_SortMyScience_Settings_Tx_ToolTip"
+        )]
+        public float txThreshold = 1f;  // 100%
+
+        [GameParameters.CustomFloatParameterUI(
+            "#autoLOC_SortMyScience_Settings_Lab",
+            minValue = 0f,
+            maxValue = 0.20f,  // 0% → 20%
+            stepCount = 201,
+            displayFormat = "P1", // percentage: 0.0% – 20.0%
+            toolTip = "#autoLOC_SortMyScience_Settings_LabTooltip"
+        )]
+        public float labThreshold = 0.01f; // 1%
+
+        [GameParameters.CustomParameterUI(
+            "#autoLOC_SortMyScience_Settings_Discard",
+            toolTip = "#autoLOC_SortMyScience_Settings_DiscardTooltip"
+        )]
+        public bool discardDuds = true;
+
         [GameParameters.CustomFloatParameterUI(
             "#autoLOC_SortMyScience_Settings_DiscardThreshold",
             minValue = 0f,
-            maxValue = 0.1f,
+            maxValue = 0.01f,     // 0.000 → 0.010 (fractions)
             stepCount = 101,
-            displayFormat = "0.000",
+            displayFormat = "0.000", // show fractional scientific value
             toolTip = "#autoLOC_SortMyScience_Settings_DiscardThresholdTooltip"
         )]
-        public float discardThreshold = 1f / 1000f;   // EXACTLY 0.001
+        public float discardThreshold = 0.001f; // default 0.1% (0.001 fraction)
+
+        public override bool Enabled(MemberInfo member, GameParameters parameters)
+        {
+            // Always display every setting in this category
+            return true;
+        }
+
+        public override bool Interactible(MemberInfo member, GameParameters parameters)
+        {
+            if (member.Name == nameof(discardThreshold))
+                return discardDuds;   // Greyed out when discardDuds == false
+
+            return true;
+        }
     }
 }
