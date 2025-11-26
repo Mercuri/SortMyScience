@@ -28,11 +28,8 @@ THE SOFTWARE.
 using KSP.Localization;
 using KSP.UI.Screens.Flight.Dialogs;
 using KSP.UI.TooltipTypes;
-using KSPAchievements;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
 using System.Reflection;
 using UnityEngine;
 using UnityEngine.UI;
