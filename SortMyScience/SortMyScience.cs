@@ -39,190 +39,190 @@ using UnityEngine.UI;
 
 namespace SortMyScience
 {
-	[KSPAddon(KSPAddon.Startup.Flight, false)]
-	public class SortMyScience : MonoBehaviour
+    [KSPAddon(KSPAddon.Startup.Flight, false)]
+    public class SortMyScience : MonoBehaviour
     {
-		private static Sprite transferNormal;
-		private static Sprite transferHighlight;
-		private static Sprite transferActive;
-		private static bool spritesLoaded;
-		private static SortMyScience instance;
+        private static Sprite transferNormal;
+        private static Sprite transferHighlight;
+        private static Sprite transferActive;
+        private static bool spritesLoaded;
+        private static SortMyScience instance;
 
-		private string version;
-		private SortMyScienceParameters settings;
-		private Button transferButton;
-		private ExperimentsResultDialog resultsDialog;
-		private ExperimentResultDialogPage currentPage;
+        private string version;
+        private SortMyScienceParameters settings;
+        private Button transferButton;
+        private ExperimentsResultDialog resultsDialog;
+        private ExperimentResultDialogPage currentPage;
 
-		public static SortMyScience Instance
-		{
-			get { return instance; }
-		}
+        public static SortMyScience Instance
+        {
+            get { return instance; }
+        }
 
-		private void Awake()
-		{
+        private void Awake()
+        {
 #if DEBUG
 			SMSLog("Entering Awake()");
 #endif
-			if (HighLogic.CurrentGame.Mode == Game.Modes.SANDBOX)
-			{
-				Destroy(gameObject);
-				return;
-			}
+            if (HighLogic.CurrentGame.Mode == Game.Modes.SANDBOX)
+            {
+                Destroy(gameObject);
+                return;
+            }
 
-			if (instance != null)
-			{
-				Destroy(gameObject);
-				return;
-			}
+            if (instance != null)
+            {
+                Destroy(gameObject);
+                return;
+            }
 
-			if (!spritesLoaded)
-				LoadSprite();
+            if (!spritesLoaded)
+                LoadSprite();
 
-			instance = this;
-			
-			ProcessPrefab();
+            instance = this;
+
+            ProcessPrefab();
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0019:Use pattern matching", Justification = "Using Pattern Matching breaks switch statement")]
         private void Start()
-		{
+        {
 #if DEBUG
 			SMSLog("Entering Start()");
 #endif
-			SortMyScienceDialog.onDialogSpawn.Add(OnSpawn);
+            SortMyScienceDialog.onDialogSpawn.Add(OnSpawn);
             SortMyScienceDialog.onDialogClose.Add(OnClose);
-			GameEvents.OnGameSettingsApplied.Add(OnSettingsApplied);
+            GameEvents.OnGameSettingsApplied.Add(OnSettingsApplied);
 
-			settings = HighLogic.CurrentGame.Parameters.CustomParams<SortMyScienceParameters>();
+            settings = HighLogic.CurrentGame.Parameters.CustomParams<SortMyScienceParameters>();
 
-			if (settings == null)
-			{
-				instance = null;
-				Destroy(gameObject);
-			}
+            if (settings == null)
+            {
+                instance = null;
+                Destroy(gameObject);
+            }
 
-			Assembly assembly = AssemblyLoader.loadedAssemblies.GetByAssembly(Assembly.GetExecutingAssembly()).assembly;
+            Assembly assembly = AssemblyLoader.loadedAssemblies.GetByAssembly(Assembly.GetExecutingAssembly()).assembly;
             var ainfoV = Attribute.GetCustomAttribute(assembly, typeof(AssemblyInformationalVersionAttribute)) as AssemblyInformationalVersionAttribute;
-			switch (ainfoV == null)
-			{
-				case true: version = ""; break;
-				default: version = ainfoV.InformationalVersion; break;
-			}
+            switch (ainfoV == null)
+            {
+                case true: version = ""; break;
+                default: version = ainfoV.InformationalVersion; break;
+            }
         }
 
-		private void OnDestroy()
-		{
+        private void OnDestroy()
+        {
 #if DEBUG
             SMSLog("Entering OnDestroy()");
 #endif
             instance = null;
             SortMyScienceDialog.onDialogSpawn.Remove(OnSpawn);
             SortMyScienceDialog.onDialogClose.Remove(OnClose);
-			GameEvents.OnGameSettingsApplied.Remove(OnSettingsApplied);
+            GameEvents.OnGameSettingsApplied.Remove(OnSettingsApplied);
         }
 
         private void OnSettingsApplied()
-		{
-			settings = HighLogic.CurrentGame.Parameters.CustomParams<SortMyScienceParameters>();
-		}
+        {
+            settings = HighLogic.CurrentGame.Parameters.CustomParams<SortMyScienceParameters>();
+        }
 
         private void LoadSprite()
-		{
+        {
 #if DEBUG
             SMSLog("Entering LoadSprite()");
 #endif
             Texture2D normal = GameDatabase.Instance.GetTexture("SortMyScience/Resources/SortMyScience_Normal", false);
-			Texture2D highlight = GameDatabase.Instance.GetTexture("SortMyScience/Resources/SortMyScience_Highlight", false);
-			Texture2D active = GameDatabase.Instance.GetTexture("SortMyScience/Resources/SortMyScience_Active", false);
+            Texture2D highlight = GameDatabase.Instance.GetTexture("SortMyScience/Resources/SortMyScience_Highlight", false);
+            Texture2D active = GameDatabase.Instance.GetTexture("SortMyScience/Resources/SortMyScience_Active", false);
 
-			if (normal == null || highlight == null || active == null)
-				return;
+            if (normal == null || highlight == null || active == null)
+                return;
 
-			transferNormal = Sprite.Create(normal, new Rect(0, 0, normal.width, normal.height), new Vector2(0.5f, 0.5f));
-			transferHighlight = Sprite.Create(highlight, new Rect(0, 0, highlight.width, highlight.height), new Vector2(0.5f, 0.5f));
-			transferActive = Sprite.Create(active, new Rect(0, 0, active.width, active.height), new Vector2(0.5f, 0.5f));
+            transferNormal = Sprite.Create(normal, new Rect(0, 0, normal.width, normal.height), new Vector2(0.5f, 0.5f));
+            transferHighlight = Sprite.Create(highlight, new Rect(0, 0, highlight.width, highlight.height), new Vector2(0.5f, 0.5f));
+            transferActive = Sprite.Create(active, new Rect(0, 0, active.width, active.height), new Vector2(0.5f, 0.5f));
 
-			spritesLoaded = true;
-		}
+            spritesLoaded = true;
+        }
 
         private void ProcessPrefab()
-		{
+        {
 #if DEBUG
             SMSLog("Entering ProcessPrefab()");
 #endif
-			GameObject prefab = AssetBase.GetPrefab("ScienceResultsDialog");
+            GameObject prefab = AssetBase.GetPrefab("ScienceResultsDialog");
 
-			if (prefab == null)
-				return;
+            if (prefab == null)
+                return;
 
             SortMyScienceDialog dialogListener = prefab.gameObject.AddOrGetComponent<SortMyScienceDialog>();
 
             Button[] buttons = prefab.GetComponentsInChildren<Button>(true);
 
-			for (int i = buttons.Length - 1; i >= 0; i--)
-			{
-				Button b = buttons[i];
-				if (b.name == "ButtonPrev")
-					dialogListener.buttonPrev = b;
-				else if (b.name == "ButtonNext")
-					dialogListener.buttonNext = b;
-				else if (b.name == "ButtonKeep")
-				{
+            for (int i = buttons.Length - 1; i >= 0; i--)
+            {
+                Button b = buttons[i];
+                if (b.name == "ButtonPrev")
+                    dialogListener.buttonPrev = b;
+                else if (b.name == "ButtonNext")
+                    dialogListener.buttonNext = b;
+                else if (b.name == "ButtonKeep")
+                {
                     dialogListener.buttonTransfer = Instantiate(b) as Button;
 
                     dialogListener.buttonTransfer.name = "ButtonTransfer";
 
                     dialogListener.buttonTransfer.onClick.RemoveAllListeners();
 
-					TooltipController_Text tooltip = dialogListener.buttonTransfer.GetComponent<TooltipController_Text>();
+                    TooltipController_Text tooltip = dialogListener.buttonTransfer.GetComponent<TooltipController_Text>();
 
-					if (tooltip != null)
-						tooltip.textString = Localizer.Format("#autoLOC_SortMyScience_Tooltip");
+                    if (tooltip != null)
+                        tooltip.textString = Localizer.Format("#autoLOC_SortMyScience_Tooltip");
 
-					if (spritesLoaded)
+                    if (spritesLoaded)
                     {
-						Selectable select = dialogListener.buttonTransfer.GetComponent<Selectable>();
+                        Selectable select = dialogListener.buttonTransfer.GetComponent<Selectable>();
 
-						if (select != null)
-						{
-							select.image.sprite = transferNormal;
-							select.image.type = Image.Type.Simple;
-							select.transition = Selectable.Transition.SpriteSwap;
+                        if (select != null)
+                        {
+                            select.image.sprite = transferNormal;
+                            select.image.type = Image.Type.Simple;
+                            select.transition = Selectable.Transition.SpriteSwap;
 
-							SpriteState state = select.spriteState;
-							state.highlightedSprite = transferHighlight;
-							state.pressedSprite = transferActive;
-							state.disabledSprite = transferActive;
-							select.spriteState = state;
-						}
-					}
+                            SpriteState state = select.spriteState;
+                            state.highlightedSprite = transferHighlight;
+                            state.pressedSprite = transferActive;
+                            state.disabledSprite = transferActive;
+                            select.spriteState = state;
+                        }
+                    }
 
-				}
-			}
+                }
+            }
 #if DEBUG
 			SMSLog("Science results prefab processed...");
 #endif
-		}
+        }
 
-		private void OnSpawn(ExperimentsResultDialog dialog, SortMyScienceDialog sortMyScienceDialog)
-		{
+        private void OnSpawn(ExperimentsResultDialog dialog, SortMyScienceDialog sortMyScienceDialog)
+        {
 #if DEBUG
             SMSLog("Entering OnSpawn()");
 #endif
-			if (dialog == null)
-				return;
+            if (dialog == null)
+                return;
 
-			resultsDialog = dialog;
+            resultsDialog = dialog;
 
-			var buttons = resultsDialog.GetComponentsInChildren<Button>(true);
+            var buttons = resultsDialog.GetComponentsInChildren<Button>(true);
 
-			for (int i = buttons.Length - 1; i >= 0; i--)
-			{
-				Button b = buttons[i];
+            for (int i = buttons.Length - 1; i >= 0; i--)
+            {
+                Button b = buttons[i];
 
                 if (b == null)
-					continue;
+                    continue;
 
                 if (b.name == "ButtonKeep")
                 {
@@ -230,43 +230,43 @@ namespace SortMyScience
                     transferButton.onClick.AddListener(OnSortScience);
                     break;
                 }
-			}
+            }
 
             currentPage = resultsDialog.currentPage;
 
             if (currentPage.pageData != null)
-				currentPage.pageData.baseTransmitValue = currentPage.xmitDataScalar;
+                currentPage.pageData.baseTransmitValue = currentPage.xmitDataScalar;
         }
 
         private void OnClose(ExperimentsResultDialog dialog, SortMyScienceDialog sortMyScienceDialog)
-		{
+        {
 #if DEBUG
             SMSLog("Entering OnClose()");
 #endif
-			if (dialog == null || resultsDialog == null)
-				return;
+            if (dialog == null || resultsDialog == null)
+                return;
 
-			if (dialog == resultsDialog)
-			{
-				resultsDialog = null;
-				transferButton = null;
-				currentPage = null;
-			}
+            if (dialog == resultsDialog)
+            {
+                resultsDialog = null;
+                transferButton = null;
+                currentPage = null;
+            }
         }
 
-		public void OnPageChange()
-		{
+        public void OnPageChange()
+        {
 #if DEBUG
 			SMSLog("Entering OnPageChange()");
 #endif
-			if (resultsDialog == null)
-				return;
+            if (resultsDialog == null)
+                return;
 
-			currentPage = resultsDialog.currentPage;
+            currentPage = resultsDialog.currentPage;
 
-			if (currentPage.pageData != null)
-				currentPage.pageData.baseTransmitValue = currentPage.xmitDataScalar;
-		}
+            if (currentPage.pageData != null)
+                currentPage.pageData.baseTransmitValue = currentPage.xmitDataScalar;
+        }
 
         public void OnSortScience()
         {
@@ -415,7 +415,6 @@ namespace SortMyScience
 
         }
 
-
         private List<(ScienceData, IScienceDataContainer)> EnumerateAllScienceOnVessel(List<IScienceDataContainer> containers)
         {
             var list = new List<(ScienceData, IScienceDataContainer)>();
@@ -483,37 +482,16 @@ namespace SortMyScience
             try { c.DumpData(d); return true; } catch { return false; }
         }
 
-
-
         public static void SMSLog(string s, params object[] o)
-		{
-			if (o != null && o.Length > 0 && o[0] is ScienceData data)
-			{
-                Debug.Log(string.Format($"[SortMyScience] {s}:{data.subjectID}"));
-			}
-			else
-			{
-				Debug.Log(string.Format("[SortMyScience] " + s, o));
-			}
-        }
-
-        public static void SMSError(string s, params object[] o)
         {
-#if DEBUG
             if (o != null && o.Length > 0 && o[0] is ScienceData data)
             {
-                Debug.LogError(string.Format($"[SortMyScience] {s}:{data.subjectID}"));
+                Debug.Log(string.Format($"[SortMyScience] {s}:{data.subjectID}"));
             }
             else
             {
-                Debug.LogError(string.Format("[SortMyScience] " + s, o));
+                Debug.Log(string.Format("[SortMyScience] " + s, o));
             }
-            return;
-#endif
-#pragma warning disable CS0162 // Unreachable code detected
-            SMSLog(s, o);
-#pragma warning restore CS0162 // Unreachable code detected
         }
-
     }
 }
