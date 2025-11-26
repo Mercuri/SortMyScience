@@ -37,12 +37,21 @@ namespace SortMyScience
         public override GameParameters.GameMode GameMode => GameParameters.GameMode.SCIENCE | GameParameters.GameMode.CAREER; // Available in game modes with science
         public override bool HasPresets => false; // No presets
         public override int SectionOrder => 1; // Determines the position in the settings menu
-        [GameParameters.CustomFloatParameterUI("#autoLOC_SortMyScience_Settings_Tx", minValue = 0f, maxValue = 1f, stepCount = 101, displayFormat = "P0", toolTip = "#autoLOC_SortMyScience_Settings_Tx_ToolTip")]
-		public float transmissionThreshold = 1f;
-		[GameParameters.CustomFloatParameterUI("#autoLOC_SortMyScience_Settings_Lab", minValue = 0f, maxValue = 1f, stepCount = 101, displayFormat = "P0", toolTip = "#autoLOC_SortMyScience_Settings_LabTooltip")]
-		public float labThreshold = 0f;
-		[GameParameters.CustomParameterUI("#autoLOC_SortMyScience_Settings_Discard", toolTip = "#autoLOC_SortMyScience_Settings_DiscardTooltip")]
-		public bool discardDeadScience = true;
 
+        [GameParameters.CustomFloatParameterUI("#autoLOC_SortMyScience_Settings_Tx", minValue = 0f, maxValue = 1f, stepCount = 101, displayFormat = "P0", toolTip = "#autoLOC_SortMyScience_Settings_Tx_ToolTip")]
+		public float txThreshold = 1f;
+		[GameParameters.CustomFloatParameterUI("#autoLOC_SortMyScience_Settings_Lab", minValue = 0f, maxValue = 1f, stepCount = 101, displayFormat = "P0", toolTip = "#autoLOC_SortMyScience_Settings_LabTooltip")]
+		public float labThreshold = 0.01f;
+		[GameParameters.CustomParameterUI("#autoLOC_SortMyScience_Settings_Discard", toolTip = "#autoLOC_SortMyScience_Settings_DiscardTooltip")]
+		public bool discardDuds = true;
+        [GameParameters.CustomFloatParameterUI(
+            "#autoLOC_SortMyScience_Settings_DiscardThreshold",
+            minValue = 0f,
+            maxValue = 0.1f,
+            stepCount = 101,
+            displayFormat = "0.000",
+            toolTip = "#autoLOC_SortMyScience_Settings_DiscardThresholdTooltip"
+        )]
+        public float discardThreshold = 1f / 1000f;   // EXACTLY 0.001
     }
 }

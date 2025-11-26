@@ -60,6 +60,9 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>xcopy "SortMyScience.*" "D:\Steam\steamapps\common\Kerbal Space Program - Test\GameData\SortMyScience" /i /Y
-xcopy "..\..\GameData\SortMyScience\" "D:\Steam\steamapps\common\Kerbal Space Program - Test\GameData\SortMyScience\" /s/e /i /Y</PostBuildEvent>
+xcopy "..\..\GameData\SortMyScience\" "D:\Steam\steamapps\common\Kerbal Space Program - Test\GameData\SortMyScience\" /s/e /i /Y
+
+xcopy "SortMyScience.*" "D:\Steam\steamapps\common\Kerbal Space Program\GameData\SortMyScience" /i /Y
+xcopy "..\..\GameData\SortMyScience\" "D:\Steam\steamapps\common\Kerbal Space Program\GameData\SortMyScience\" /s/e /i /Y</PostBuildEvent>
   </PropertyGroup>
 </Project>

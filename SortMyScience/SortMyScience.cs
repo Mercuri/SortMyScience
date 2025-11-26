@@ -28,8 +28,11 @@ THE SOFTWARE.
 using KSP.Localization;
 using KSP.UI.Screens.Flight.Dialogs;
 using KSP.UI.TooltipTypes;
+using KSPAchievements;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Linq;
 using System.Reflection;
 using UnityEngine;
 using UnityEngine.UI;
@@ -265,121 +268,224 @@ namespace SortMyScience
 				currentPage.pageData.baseTransmitValue = currentPage.xmitDataScalar;
 		}
 
-		public void OnSortScience()
-		{
-			SMSLog("Sorting Science!");
+        public void OnSortScience()
+        {
+            SMSLog("SortScience: Vessel-wide processing triggered.");
 
-			if (resultsDialog == null)
-				return;
+            Vessel v = FlightGlobals.ActiveVessel;
+            if (v == null) return;
 
-			if (currentPage == null)
-				return;
+            // Close the dialog because it becomes outdated after processing
+            try { resultsDialog?.Dismiss(); } catch { }
 
-			if (currentPage.pageData == null)
-				return;
-
-            var vessel = FlightGlobals.ActiveVessel;
-
-			//Set up counters
-			int transmitted = 0, labbed = 0, discarded = 0, kept = 0;
-            //Get the antenna
-            IScienceDataTransmitter bestTransmitter = ScienceUtil.GetBestTransmitter(vessel);
-
-			foreach (ExperimentResultDialogPage page in resultsDialog.pages)
-			{
-				if (page == null)
-					continue;
-
-				if (page.pageData == null)
-					continue;
-
-				if (page.host == null)
-					continue;
-
-                ModuleScienceLab lab = page.labSearch.NextLabForData;
-
-                //Transmit
-                if (page.xmitDataScalar >= settings.transmissionThreshold		// Check Against Trasmission Threshold
-					&& page.scienceValue > 0f									// Make sure experiment has science value
-					&& bestTransmitter != null									// Verify we have a transmitter
-					&& bestTransmitter.CanTransmit())							// Verify we have a connection
-				{
-					SMSLog("Transmit", page.pageData);
-					List<ScienceData> data = new List<ScienceData> { page.pageData };
-					bestTransmitter.TransmitData(data);
-                    DumpData(page.pageData);    // The science data in the results dialog seems to be a copy, so we need to dump it from the original container
-                    transmitted++;
-				}
-                //Lab
-                else if (page.labSearch.Error == ScienceLabSearch.SearchError.NONE									// Check that a Lab is available
-					&& page.pageData.labValue > 0																	// Make sure experiment has research value
-					&& (float)Math.Round((double)page.scienceValue / page.refValue, 1) <= settings.labThreshold)	// Check recovery percentage is below lab threshold
-				{
-					SMSLog("Lab", page.pageData);
-					resultsDialog.StartCoroutine(lab.ProcessData(page.pageData));
-					DumpData(page.pageData);    // The science data in the results dialog seems to be a copy, so we need to dump it from the original container
-                    labbed++;
-				}
-				//Discard
-				else if (settings.discardDeadScience											// Check if discarding is enabled
-					&& Math.Round((double)page.remainingScience, 1) == 0.0						// Make sure experiment has virtually no value
-					&& (page.labSearch.Error == ScienceLabSearch.SearchError.ALL_RESEARCHED		// Verify that science has already been researched ...
-					|| page.pageData.labValue == 0f))											// ... Or that science has no research value
-				{
-					SMSLog("Discard", page.pageData);
-					DumpData(page.pageData);
-					discarded++;
-                }
-				//Keep the rest (Returnables, Transmittables w/o Connection, and Lab-worthy data without an available lab)
-				else
-				{
-					SMSLog("Keep", page.pageData);
-					kept++;
-				}
+            // Find all containers on the vessel (IScienceDataContainer)
+            List<IScienceDataContainer> containers = v.FindPartModulesImplementing<IScienceDataContainer>();
+            if (containers == null || containers.Count == 0)
+            {
+                SMSLog("No science containers found on vessel.");
+                return;
             }
 
-            resultsDialog.Dismiss();
-			string msg = Localizer.Format("#autoLOC_SortMyScience_CompleteMsg", transmitted, labbed, discarded, kept);
-			ScreenMessages.PostScreenMessage(msg, duration: 7.5f);
-			SMSLog(msg);
+            // Gather all science packets and their owning container
+            List<(ScienceData data, IScienceDataContainer container)> allScience = EnumerateAllScienceOnVessel(containers);
+
+            int transmitted = 0, labbed = 0, discarded = 0, kept = 0;
+
+            foreach (var entry in allScience)
+            {
+                ScienceData data = entry.data;
+                IScienceDataContainer container = entry.container;
+
+                int sanityCheck = container.GetData().Length;
+                int keepBefore = kept;
+
+                if (data == null || container == null)
+                {
+                    kept++;
+                    continue;
+                }
+
+                // subject (for remaining/scienceCap)
+                ScienceSubject subj = ResearchAndDevelopment.GetSubjectByID(data.subjectID);
+                if (subj == null)
+                {
+                    SMSLog("MissingSubjectKeep", data);
+                    kept++;
+                    continue;
+                }
+
+                // extract experimentID from subjectID (subjectID format: "experimentID@...").
+                string experimentID = GetExperimentIDFromSubjectID(data.subjectID);
+                if (string.IsNullOrEmpty(experimentID))
+                {
+                    SMSLog("SubjectParseFailKeep", data);
+                    kept++;
+                    continue;
+                }
+
+                // Try to find the ModuleScienceExperiment that corresponds to this experimentID.
+                // Prefer the module values because the dialog uses the module's settings (dataScale, xmitDataScalar).
+                ModuleScienceExperiment expModule = FindExperimentModuleForData(v, experimentID);
+
+                // If no exp module on vessel (data might have been moved, produced by lab, etc.),
+                // fall back to the experiment definition stored in ResearchAndDevelopment.
+                ScienceExperiment expDef = ResearchAndDevelopment.GetExperiment(experimentID);
+                if (expDef == null)
+                {
+                    SMSLog("NoExperimentDefKeep", data);
+                    kept++;
+                    continue;
+                }
+
+                // Compute authoritative fullValue (what the dialog shows as the experiment's full value)
+                // Prefer module's dataScale if module exists; otherwise use experiment definition's dataScale/baseValue.
+                float dataScale = expDef != null ? expDef.dataScale : 1.0f;
+                float baseValue = expDef != null ? expDef.baseValue : 0f;
+
+                // FULL (reference) value the Results Dialog displays
+                // NOTE: do NOT multiply by data.dataAmount — that field isn't the dialog's science amount.
+                float fullValue = baseValue * dataScale;
+                if (fullValue <= 0f)
+                {
+                    // fallback conservative behaviour
+                    kept++;
+                    continue;
+                }
+
+                // Remaining science available for this subject (cap - current)
+                float remaining = subj.scienceCap - subj.science;
+                if (remaining < 0f) remaining = 0f;
+
+                // Recovery value the dialog would display: min(fullValue, remaining)
+                float recoveryValue = Mathf.Min(fullValue, remaining);
+
+                // Lab value is stored on ScienceData and is authoritative
+                float labValue = data.labValue;
+
+                // xmit scalar: get from module if available; otherwise fall back to experiment default (1.0)
+                float xmitScalar = expModule != null ? expModule.xmitDataScalar : 1.0f;
+
+                // transmitValue and fractions (use fractions 0..1 for thresholds)
+                float transmitValue = recoveryValue * xmitScalar;
+                float transmitFrac = transmitValue / fullValue;     // 0..1
+                float remainingFrac = recoveryValue / fullValue;    // 0..1
+
+                bool allResearched = subj.science >= subj.scienceCap;
+                bool hasLabValue = labValue > 0f;
+
+                // 1) Transmit if meets threshold (thresholds are fractions 0..1)
+                if (transmitFrac >= settings.txThreshold)
+                {
+                    if (TransmitScience(data, container))
+                        transmitted++;
+                    else
+                        kept++;
+                    continue;
+                }
+
+                // 2) Lab (lab-before-discard)
+                if (hasLabValue && remainingFrac <= settings.labThreshold)
+                {
+                    if (SendToLab(data, container, v))
+                        labbed++;
+                    else
+                        kept++;
+                    continue;
+                }
+
+                // 3) Discard duds (no lab value and below discardThreshold or fully researched)
+                if (settings.discardDuds && !hasLabValue &&
+                    (remainingFrac <= settings.discardThreshold || allResearched))
+                {
+                    if (DiscardScience(data, container))
+                        discarded++;
+                    else
+                        kept++;
+                    continue;
+                }
+
+                // 4) Keep otherwise
+                kept++;
+            }
+
+            // Final message & log
+            string msg = Localizer.Format("#autoLOC_SortMyScience_CompleteMsg", transmitted, labbed, discarded, kept);
+            ScreenMessages.PostScreenMessage(msg, 7.5f, ScreenMessageStyle.UPPER_CENTER);
+            SMSLog(msg);
+
         }
 
-        private Part GetContainerPart(ScienceData science)
+
+        private List<(ScienceData, IScienceDataContainer)> EnumerateAllScienceOnVessel(List<IScienceDataContainer> containers)
         {
-            // Ensure we are in a flight scene and the active vessel is available
-            if (FlightGlobals.ActiveVessel != null)
+            var list = new List<(ScienceData, IScienceDataContainer)>();
+            foreach (var c in containers)
             {
-                // Iterate through all parts on the active vessel
-                foreach (Part p in FlightGlobals.ActiveVessel.parts)
+                ScienceData[] ds = c.GetData();
+                if (ds == null) continue;
+                foreach (var d in ds) list.Add((d, c));
+            }
+            return list;
+        }
+
+        private string GetExperimentIDFromSubjectID(string subjectID)
+        {
+            if (string.IsNullOrEmpty(subjectID)) return null;
+            int i = subjectID.IndexOf('@');
+            if (i <= 0) return null;
+            return subjectID.Substring(0, i);
+        }
+
+        private ModuleScienceExperiment FindExperimentModuleForData(Vessel v, string experimentID)
+        {
+            if (v == null || string.IsNullOrEmpty(experimentID)) return null;
+            foreach (Part p in v.parts)
+            {
+                foreach (var exp in p.FindModulesImplementing<ModuleScienceExperiment>())
                 {
-                    // Check if the part's flightID matches the container ID
-                    if (p.flightID == science.container)
-                    {
-                        return p; // Found the correct part
-                    }
+                    if (exp != null && exp.experimentID == experimentID)
+                        return exp;
                 }
             }
-			// If not found (e.g., vessel unloaded, data corrupted, or in editor scene)
-			SMSError($"Could not find science container for {science.subjectID}");
             return null;
         }
 
-		private void DumpData(ScienceData data)
-		{
-            Part p = GetContainerPart(data);
-            if (p != null)
-			{
-                ModuleScienceContainer c = p.FindModuleImplementing<ModuleScienceContainer>();
-				//c?.DumpData(data);
-				if(c == null)
-				{
-					SMSError("Could not dump experiment", data);
-				}
-				c.DumpData(data);
-            }
+        private bool TransmitScience(ScienceData d, IScienceDataContainer c)
+        {
+            var tx = ScienceUtil.GetBestTransmitter(FlightGlobals.ActiveVessel);
+            if (tx == null || !tx.CanTransmit()) return false;
+
+            tx.TransmitData(new List<ScienceData> { d });
+
+            // Ensure the original container loses the data
+            try { c.DumpData(d); } catch { }
+            return true;
         }
-		
-		public static void SMSLog(string s, params object[] o)
+
+        private bool SendToLab(ScienceData d, IScienceDataContainer c, Vessel v)
+        {
+            var labs = v.FindPartModulesImplementing<ModuleScienceLab>();
+            if (labs == null || labs.Count == 0) return false;
+
+            // pick the first operational lab (or adapt to pick best)
+            foreach (var lab in labs)
+            {
+                if (!lab.IsOperational()) continue;
+                lab.StartCoroutine(lab.ProcessData(d));
+                try { c.DumpData(d); } catch { }
+                return true;
+            }
+            return false;
+        }
+
+        private bool DiscardScience(ScienceData d, IScienceDataContainer c)
+        {
+            try { c.DumpData(d); return true; } catch { return false; }
+        }
+
+
+
+        public static void SMSLog(string s, params object[] o)
 		{
 			if (o != null && o.Length > 0 && o[0] is ScienceData data)
 			{
@@ -391,28 +497,23 @@ namespace SortMyScience
 			}
         }
 
-        public static void SMSWarn(string s, params object[] o)
+        public static void SMSError(string s, params object[] o)
         {
+#if DEBUG
             if (o != null && o.Length > 0 && o[0] is ScienceData data)
             {
-                Debug.LogWarning(string.Format($"[SortMyScience] {s}:{data.subjectID}"));
+                Debug.LogError(string.Format($"[SortMyScience] {s}:{data.subjectID}"));
             }
             else
             {
-                Debug.LogWarning(string.Format("[SortMyScience] " + s, o));
+                Debug.LogError(string.Format("[SortMyScience] " + s, o));
             }
+            return;
+#endif
+#pragma warning disable CS0162 // Unreachable code detected
+            SMSLog(s, o);
+#pragma warning restore CS0162 // Unreachable code detected
         }
 
-        public static void SMSError(string s, params object[] o)
-        {
-			if (o != null && o.Length > 0 && o[0] is ScienceData data)
-			{
-				Debug.LogError(string.Format($"[SortMyScience] {s}:{data.subjectID}"));
-			}
-			else
-			{
-				Debug.LogError(string.Format("[SortMyScience] " + s, o));
-			}
-        }
     }
 }
