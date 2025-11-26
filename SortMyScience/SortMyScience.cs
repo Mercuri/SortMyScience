@@ -285,10 +285,8 @@ namespace SortMyScience
             //Get the antenna
             IScienceDataTransmitter bestTransmitter = ScienceUtil.GetBestTransmitter(vessel);
 
-			for (int i = resultsDialog.pages.Count - 1; i >= 0; i--)
+			foreach (ExperimentResultDialogPage page in resultsDialog.pages)
 			{
-				ExperimentResultDialogPage page = resultsDialog.pages[i];
-
 				if (page == null)
 					continue;
 
@@ -306,7 +304,7 @@ namespace SortMyScience
 					&& bestTransmitter != null									// Verify we have a transmitter
 					&& bestTransmitter.CanTransmit())							// Verify we have a connection
 				{
-					SMSLog("Transmit:", page.pageData);
+					SMSLog("Transmit", page.pageData);
 					List<ScienceData> data = new List<ScienceData> { page.pageData };
 					bestTransmitter.TransmitData(data);
                     DumpData(page.pageData);    // The science data in the results dialog seems to be a copy, so we need to dump it from the original container
@@ -317,7 +315,7 @@ namespace SortMyScience
 					&& page.pageData.labValue > 0																	// Make sure experiment has research value
 					&& (float)Math.Round((double)page.scienceValue / page.refValue, 1) <= settings.labThreshold)	// Check recovery percentage is below lab threshold
 				{
-					SMSLog("Lab:", page.pageData);
+					SMSLog("Lab", page.pageData);
 					resultsDialog.StartCoroutine(lab.ProcessData(page.pageData));
 					DumpData(page.pageData);    // The science data in the results dialog seems to be a copy, so we need to dump it from the original container
                     labbed++;
@@ -328,14 +326,14 @@ namespace SortMyScience
 					&& (page.labSearch.Error == ScienceLabSearch.SearchError.ALL_RESEARCHED		// Verify that science has already been researched ...
 					|| page.pageData.labValue == 0f))											// ... Or that science has no research value
 				{
-					SMSLog("Discard:", page.pageData);
+					SMSLog("Discard", page.pageData);
 					DumpData(page.pageData);
 					discarded++;
                 }
 				//Keep the rest (Returnables, Transmittables w/o Connection, and Lab-worthy data without an available lab)
 				else
 				{
-					SMSLog("Keep:", page.pageData);
+					SMSLog("Keep", page.pageData);
 					kept++;
 				}
             }
@@ -372,7 +370,12 @@ namespace SortMyScience
             if (p != null)
 			{
                 ModuleScienceContainer c = p.FindModuleImplementing<ModuleScienceContainer>();
-				c?.DumpData(data);
+				//c?.DumpData(data);
+				if(c == null)
+				{
+					SMSError("Could not dump experiment", data);
+				}
+				c.DumpData(data);
             }
         }
 		
@@ -380,7 +383,7 @@ namespace SortMyScience
 		{
 			if (o != null && o.Length > 0 && o[0] is ScienceData data)
 			{
-                Debug.Log(string.Format($"[SortMyScience] {s} : {data.subjectID}"));
+                Debug.Log(string.Format($"[SortMyScience] {s}:{data.subjectID}"));
 			}
 			else
 			{
@@ -392,7 +395,7 @@ namespace SortMyScience
         {
             if (o != null && o.Length > 0 && o[0] is ScienceData data)
             {
-                Debug.LogWarning(string.Format($"[SortMyScience] {s} : {data.subjectID}"));
+                Debug.LogWarning(string.Format($"[SortMyScience] {s}:{data.subjectID}"));
             }
             else
             {
@@ -404,7 +407,7 @@ namespace SortMyScience
         {
 			if (o != null && o.Length > 0 && o[0] is ScienceData data)
 			{
-				Debug.LogError(string.Format($"[SortMyScience] {s} : {data.subjectID}"));
+				Debug.LogError(string.Format($"[SortMyScience] {s}:{data.subjectID}"));
 			}
 			else
 			{
